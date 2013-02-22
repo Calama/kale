@@ -1,4 +1,4 @@
 kale
 ====
 
-Progamatic class generation, storage, and instantiation in Python.
+As thin a layer as I could make around pymongo while still be useful.
