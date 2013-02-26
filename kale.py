@@ -3,23 +3,33 @@
     kale
 
     A convenient superclass for stuff you want to keep in mongodb.
+    Add and remove properties all you like. They'll be there.
 
-        In [1]: class User(kModel):
+        In [1]: class User(KaleModel):
            ...:     def __init__(self, username):
            ...:         self.username = username
            ...: 
 
         In [2]: joe = User('joe')
 
-        In [3]: joe.save()
-        Out[3]: ObjectId('5127ef70c7b7e814a1a4405f')
+        In [3]: joe.password = 'security now!'
 
-        In [4]: del joe
+        In [4]: joe.save()
+        Out[4]: ObjectId('5127ef70c7b7e814a1a4405f')
 
-        In [5]: joe = User.find_one({'username': 'joe'})
+        In [5]: del joe
 
-        In [6]: joe.__class__
-        Out[6]: User
+        In [6]: joe = User.find_one({'username': 'joe'})
+
+        In [7]: joe.__class__
+        Out[7]: User
+
+        In [8]: joe.password
+        Out[8]: 'security now!'
+
+
+    By default, kale will try to use a connection on localhost to a database
+    called kale. To set this yourself instead, monkey-patch db.
 
     :requires: pymongo, jsonpickle
     :copyright: none, but put together by uniphil
@@ -30,11 +40,47 @@ from abc import ABCMeta
 from pymongo import Connection
 from jsonpickle import Pickler, Unpickler
 
-DATABASE_NAME = 'kale'
-
-db = Connection().DATABASE_NAME
 jsonify = Pickler().flatten
 unjson = Unpickler().restore
+
+# for now, monkey-patch db. there will be a better api later.
+db = None
+try:
+    DATABASE_NAME = 'kale'
+    db = Connection().DATABASE_NAME
+except:
+    pass
+
+
+def inflate(flat, model=None):
+    """Restore a flat json representation to an actual object.
+
+    If it was flattened with jsonpickle, it will already have a 'py/object'
+    property, which will be used to instantiate.
+
+    :param model: the importable class you want to restore to.
+    """
+    if model:
+        # check if it's an instance or a class
+        cls = model if isinstance(model, type) else model.__class__
+        module = cls.__module__
+        name = cls.__name__
+        # format from jsonpickle.pickler.Pickler._flatten_obj_instance
+        pyobjstr = '{module}.{name}'.format(module=module, name=name)
+        flat['py/object'] = pyobjstr
+
+    obj = unjson(flat)
+    return obj
+
+
+def inflate_cursor(cursor, model=None):
+    """Wrap a the inflator around a pymongo cursor (or any iterable of
+    jsonpickle objects).
+    """
+    while True:
+        flat = cursor.next()
+        obj = inflate(flat, model)
+        yield obj
 
 
 class GetClassProperty(property):
@@ -49,7 +95,7 @@ class GetClassProperty(property):
         return self.fget.__get__(None, owner)()
 
 
-class kModel(object):
+class KaleModel(object):
     """Easy-access json object flatten/restore with mongodb helpers built in!
 
     Do not instantiate this directly. Subclass it. Store properties on your
@@ -67,7 +113,7 @@ class kModel(object):
     def _collection_name(cls):
         """You can just define this straight-up as a normal attribute
         
-        >>> class MyModel(kModel):
+        >>> class MyModel(KaleModel):
         ...     _collection_name = 'mymodels'
         ...
 
@@ -78,7 +124,7 @@ class kModel(object):
     @GetClassProperty
     @classmethod
     def collection(cls):
-        return mongo.db[cls._collection_name]
+        return db[cls._collection_name]
 
     @property
     def flat(self):
@@ -114,39 +160,16 @@ class kModel(object):
             return _id
 
     @classmethod
-    def inflate(cls, json_repr):
-        """Given a jsonpickled dict, instantiate an instance of this class.
-        
-        If you use model.collection.[some pymongo method], you will want to
-        inflate the result with this method.
-
-        If the dict doesn't reference this model, try to cast it (and probably
-        fail).
-        """
-        obj = unjson(json_repr)
-        if not isinstance(obj, cls):
-            # not a member of this class? try to cast it...
-            try:
-                return cls(obj)
-            except TypeError:
-                # c'mon, that was a pretty terrible plan man.
-                return None
-        return obj
-
-    # @classmethod
-    # def find(cls, dict_query):
-    #     """Lazy iterable attempt at inflation of results.
-    #     """
-        
-    #     flat_jsons = cls.collection.find(dict_query)
-    #     instances = [cls.inflate(j) for j in flat_json
-    #     return instance
+    def find(cls, *args, **kwargs):
+        """Iterable of instances of this model from the query."""
+        cursor = cls.collection.find(*args, **kwargs)
+        iterable = inflate_cursor(cursor, cls)
+        return iterable
 
     @classmethod
-    def find_one(cls, dict_query):
-        """Thin pymongo wrapper that will inflate the result into an actual
-        instance for you.
+    def find_one(cls, *args, **kwargs):
+        """Return a single instance of the class given a mongodb query.
         """
-        flat_json = cls.collection.find_one(dict_query)
-        instance = cls.inflate(flat_json)
+        flat_json = cls.collection.find_one(*args, **kwargs)
+        instance = inflate(flat_json, cls)
         return instance
