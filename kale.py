@@ -78,7 +78,7 @@ def inflate(flat, model=None):
 
 def inflate_cursor(cursor, model=None):
     """Wrap a the inflator around a pymongo cursor (or any iterable of
-    jsonpickle objects).
+    jsonpickled objects).
     """
     while True:
         flat = cursor.next()
