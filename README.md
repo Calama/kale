@@ -7,6 +7,20 @@ Add and remove properties all you like. They'll be there.
 
 Built on pymongo and jsonpickle.
 
+
+Install
+-------
+
+```sh
+pip install kale
+```
+
+hint: virtualenv is awesome.
+
+
+Quickstart
+----------
+
 ```python
 >>> from kale import KaleModel
 >>> class User(KaleModel):
