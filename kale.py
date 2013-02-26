@@ -54,6 +54,9 @@ class kModel(object):
 
     Do not instantiate this directly. Subclass it. Store properties on your
     subclasses n stuff. Save. Restore. Magic.
+
+    If you want to specify a collection where your objects will be saved, just
+    set the class-level property `_collection_name` to something.
     """
 
     __metaclass__ = ABCMeta # I'm expressing intent here. Since there are no
@@ -61,9 +64,21 @@ class kModel(object):
 
     @GetClassProperty
     @classmethod
+    def _collection_name(cls):
+        """You can just define this straight-up as a normal attribute
+        
+        >>> class MyModel(kModel):
+        ...     _collection_name = 'mymodels'
+        ...
+
+        etc.
+        """
+        return cls.__name__.lower() + 's'
+
+    @GetClassProperty
+    @classmethod
     def collection(cls):
-        collection_name = cls.__name__.lower()
-        return mongo.db[collection_name]
+        return mongo.db[cls._collection_name]
 
     @property
     def flat(self):
@@ -111,17 +126,21 @@ class kModel(object):
         obj = unjson(json_repr)
         if not isinstance(obj, cls):
             # not a member of this class? try to cast it...
-            return cls(obj)
+            try:
+                return cls(obj)
+            except TypeError:
+                # c'mon, that was a pretty terrible plan man.
+                return None
         return obj
 
-    @classmethod
-    def find(cls, dict_query):
-        """Thin pymongo wrapper that will inflate the result into an actual
-        instance for you.
-        """
-        flat_json = cls.collection.find(dict_query)
-        instance = cls.inflate(flat_json)
-        return instance
+    # @classmethod
+    # def find(cls, dict_query):
+    #     """Lazy iterable attempt at inflation of results.
+    #     """
+        
+    #     flat_jsons = cls.collection.find(dict_query)
+    #     instances = [cls.inflate(j) for j in flat_json
+    #     return instance
 
     @classmethod
     def find_one(cls, dict_query):
@@ -131,4 +150,3 @@ class kModel(object):
         flat_json = cls.collection.find_one(dict_query)
         instance = cls.inflate(flat_json)
         return instance
-
