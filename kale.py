@@ -2,7 +2,9 @@
 """
     kale
 
-    A convenient superclass for stuff you want to keep in mongodb.
+    A convenient superclass for stuff you want to keep in mongodb built on
+    pymongo and jsonpickle.
+
     Add and remove properties all you like. They'll be there.
 
         In [1]: class User(KaleModel):
@@ -32,18 +34,19 @@
     called kale. To set this yourself instead, monkey-patch db.
 
     :requires: pymongo, jsonpickle
-    :copyright: none, but put together by uniphil
+    :copyright: Calama Consulting, written and maintained by uniphil
     :license: :) see http://license.visualidiot.com/
 """
+
 
 from abc import ABCMeta
 from pymongo import Connection
 from jsonpickle import Pickler, Unpickler
 
+
 jsonify = Pickler().flatten
 unjson = Unpickler().restore
-
-# for now, monkey-patch db. there will be a better api later.
+# for now, monkey-patch db. there may be a better api for this later.
 db = None
 try:
     DATABASE_NAME = 'kale'
@@ -114,10 +117,7 @@ class KaleModel(object):
         """You can just define this straight-up as a normal attribute
         
         >>> class MyModel(KaleModel):
-        ...     _collection_name = 'mymodels'
-        ...
-
-        etc.
+        ...     _collection_name = 'anycollection'
         """
         return cls.__name__.lower() + 's'
 
