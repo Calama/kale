@@ -16,12 +16,12 @@ readme = open('README.md').read()
 
 setup(
     name='kale',
-    version='0.0.22',
+    version='0.1rc1',
     author='Philip Schleihauf',
     author_email='uniphil@gmail.com',
     license=':) released by Calama Consulting',
     description='Mongodb model helpers',
     long_description=readme,
-    install_requires=['pymongo', 'jsonpickle'],
+    install_requires=['pymongo'],
     py_modules=['kale'],
 )

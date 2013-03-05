@@ -3,42 +3,21 @@ kale
 
 A convenient superclass and some helpers for stuff you want to keep in mongodb.
 
-Add and remove properties all you like. They'll be there.
 
-Built on pymongo and jsonpickle.
+Features
+--------
 
+### CRUD -- methods for model Creation, Reading, Updating, and Deleting
 
-Install
--------
+#### Creating, saving
 
-```sh
-pip install kale
-```
+`Model.save()` will call `mongo
 
-hint: virtualenv is awesome.
+#### Reading
 
+`Model.find_one()` wraps `pymongo.read_one()`, returning an instantiation of `Model` based on the result of the query, or `None`.
 
-Quickstart
-----------
+#### Save
 
-```python
->>> from kale import KaleModel
->>> class User(KaleModel):
-...     def __init__(self, username):
-...             self.username = username
-... 
->>> joe = User('joe')
->>> joe.password = 'security now!'
->>> joe.save()
-ObjectId('512d1ace360e2e3037a3d89c')
->>> del joe
->>> retrieved_joe = User.find_one({'username': 'joe'})
->>> retrieved_joe.__class__
-<class '__main__.User'>
->>> retrieved_joe.password
-u'security now!'
->>> 
-```
+`
 
-By default, kale will try to use a connection on localhost to a database
-called kale. To set this yourself, monkey-patch db.
