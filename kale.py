@@ -52,13 +52,11 @@ class Cursor(PyMongoCursor):
         self._model_class = collection._model_class
 
     def next(self):
-        print "nexting"
         document = super(Cursor, self).next()
         model_instance = self._model_class.inflate(document)
         return model_instance
 
     def __getitem__(self, index):
-        print "getting"
         if isinstance(index, slice):
             # pymongo will return an iterator, so next will be called.
             return super(Cursor, self).__getitem__(index)
@@ -79,11 +77,10 @@ class Collection(PyMongoCollection):
         self._model_class = model
 
     def find(self, *args, **kwargs):
-        pymongo_cursor = Cursor(collection=self, *args, **kwargs)
+        pymongo_cursor = Cursor(self, *args, **kwargs)
         return pymongo_cursor
 
     def find_one(self, *args, **kwargs):
-        print 'finding one from', self.collection
         document = super(Collection, self).find_one(*args, **kwargs)
         if document:
             model_instance = self._model_class.inflate(document)
@@ -141,6 +138,18 @@ class AttrDict(dict):
 class Model(AttrDict):
     """Helper methods and properties."""
 
+    def __new__(cls, *args, **kwargs):
+        """Return an instance of the class.
+        ABCMeta isn't enforced because AttrDict screws around with __getattr__,
+        so we have to enforce subclass conformance manually.
+        """
+        if cls is Model:
+            raise TypeError('Only instantiate subclasses of kale.Model')
+        if isinstance(cls._collection_name, abstractproperty):
+            raise TypeError('You had better define a _collection_name...')
+        instance = super(Model, cls).__new__(cls, *args, **kwargs)
+        return instance
+
     __metaclass__ = ABCMeta
 
     @GetClassProperty
@@ -151,7 +160,6 @@ class Model(AttrDict):
     @abstractproperty
     def _collection_name(cls):
         """The MongoDB collection name to use. Kale won't guess for you."""
-        return
 
     @GetClassProperty
     @classmethod
@@ -177,7 +185,7 @@ class Model(AttrDict):
         if spec:
             raise WrongLevel('Collection-level removes blah blah blah use '
                              'Model.collection.remove(spec)')
-        spec = {'_id': self._id}
+        spec = {'_id': self.pop('_id')}
         return self.collection.remove(spec=spec)
 
     @classmethod
