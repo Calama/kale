@@ -4,8 +4,8 @@ kale
 A convenient superclass and some helpers for stuff you want to keep in mongodb.
 
 
-Features
---------
+Notes
+-----
 
  * Collection-level operations are accessible though the `.collection`,
    eg. `MyModel.collection.find_one()`. It's verbose, but explicit is
@@ -22,8 +22,4 @@ Features
 
  * The model-level `remove` is restricted to only remove the model's document.
 
-
-Missing
--------
-
- * autoref?
+ * No special ref support... yet.

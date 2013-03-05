@@ -16,18 +16,20 @@ from pymongo.collection import Collection as PyMongoCollection
 from pymongo.cursor import Cursor as PyMongoCursor
 
 
-class LazyThing(object):
-    """Delay something's instantiation until an attribute is requested"""
-    def __init__(self, class_):
-        self.class_ = class_
+class LazyConnection(object):
+    """create the connection only when asked for"""
+    def __init__(self, connection_class):
+        self.connection_class = connection_class
 
-    def __getattr__(self, key):
-        if not hasattr(self, '_thing'):
-            setattr(self, '_thing', self.class_())
-        return getattr(self._thing, key)
+    def __getitem__(self, key):
+        try:
+            return self._connection[key]
+        except AttributeError:
+            self._connection = self.connection_class()
+            return self._connection[key]
 
 
-connection = LazyThing(Connection)  # you can monkey patch this!
+connection = LazyConnection(Connection)  # you can monkey patch this!
 DATABASE_NAME = 'database'  # and this!
 
 
@@ -41,6 +43,52 @@ class GetClassProperty(property):
     """
     def __get__(self, cls, owner):
         return self.fget.__get__(None, owner)()
+
+
+class Cursor(PyMongoCursor):
+    """inflatable"""
+    def __init__(self, collection, *args, **kwargs):
+        super(Cursor, self).__init__(collection, *args, **kwargs)
+        self._model_class = collection._model_class
+
+    def next(self):
+        print "nexting"
+        document = super(Cursor, self).next()
+        model_instance = self._model_class.inflate(document)
+        return model_instance
+
+    def __getitem__(self, index):
+        print "getting"
+        if isinstance(index, slice):
+            # pymongo will return an iterator, so next will be called.
+            return super(Cursor, self).__getitem__(index)
+        elif isinstance(index, (int, long)):
+            # get a particular item by index
+            document = super(Cursor, self).__getitem__(index)
+            model_instance = self._model_class.inflate(document)
+            return model_instance
+
+
+class Collection(PyMongoCollection):
+    """Subclass pymongo.collection.Collection
+    So we can hijack returned documents and make them instances of a model."""
+
+    def __init__(self, model, database, name, *args, **kwargs):
+        """database is not a name...."""
+        super(Collection, self).__init__(database, name, *args, **kwargs)
+        self._model_class = model
+
+    def find(self, *args, **kwargs):
+        pymongo_cursor = Cursor(collection=self, *args, **kwargs)
+        return pymongo_cursor
+
+    def find_one(self, *args, **kwargs):
+        print 'finding one from', self.collection
+        document = super(Collection, self).find_one(*args, **kwargs)
+        if document:
+            model_instance = self._model_class.inflate(document)
+            return model_instance
+        return None
 
 
 class AttrDict(dict):
@@ -92,52 +140,6 @@ class AttrDict(dict):
             raise AttributeError(e)
 
 
-class Cursor(PyMongoCursor):
-    """inflatable"""
-    def __init__(self, collection, *args, **kwargs):
-        super(Cursor, self).__init__(collection, *args, **kwargs)
-        self._model_class = collection._model_class
-
-    def next(self):
-        print "nexting"
-        document = super(Cursor, self).next()
-        model_instance = self._model_class.inflate(document)
-        return model_instance
-
-    def __getitem__(self, index):
-        print "getting"
-        if isinstance(index, slice):
-            # pymongo will return an iterator, so next will be called.
-            return super(Cursor, self).__getitem__(index)
-        elif isinstance(index, (int, long)):
-            # get a particular item by index
-            document = super(Cursor, self).__getitem__(index)
-            model_instance = self._model_class.inflate(document)
-            return model_instance
-
-
-class Collection(PyMongoCollection):
-    """Subclass pymongo.collection.Collection
-    So we can hijack returned documents and make them instances of a model."""
-
-    def __init__(self, model, database, name, *args, **kwargs):
-        """database is not a name...."""
-        super(Collection, self).__init__(database, name, *args, **kwargs)
-        self._model_class = model
-
-    def find(self, *args, **kwargs):
-        pymongo_cursor = Cursor(collection=self, *args, **kwargs)
-        return pymongo_cursor
-
-    def find_one(self, *args, **kwargs):
-        print 'finding one from', self.collection
-        document = super(Collection, self).find_one(*args, **kwargs)
-        if document:
-            model_instance = self._model_class.inflate(document)
-            return model_instance
-        return None
-
-
 class Model(AttrDict):
     """Helper methods and properties."""
 
@@ -150,7 +152,6 @@ class Model(AttrDict):
 
     @abstractproperty
     def _collection_name(cls):
-        print 'asdfasfdasdfasf'
         """The MongoDB collection name to use. Kale won't guess for you."""
         return
 
