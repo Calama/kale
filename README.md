@@ -23,3 +23,5 @@ Notes
  * The model-level `remove` is restricted to only remove the model's document.
 
  * No special ref support... yet.
+
+ * Tests are desperately lacking. Help!

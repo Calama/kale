@@ -11,12 +11,12 @@
 
 
 from abc import ABCMeta, abstractproperty
-from pymongo import Connection
+from pymongo import MongoClient
 from pymongo.collection import Collection as PyMongoCollection
 from pymongo.cursor import Cursor as PyMongoCursor
 
 
-class LazyConnection(object):
+class LazyMongoClient(object):
     """create the connection only when asked for"""
     def __init__(self, connection_class):
         self.connection_class = connection_class
@@ -29,7 +29,7 @@ class LazyConnection(object):
             return self._connection[key]
 
 
-connection = LazyConnection(Connection)  # you can monkey patch this!
+connection = LazyMongoClient(MongoClient)  # you can monkey patch this!
 DATABASE_NAME = 'database'  # and this!
 
 
@@ -97,21 +97,19 @@ class AttrDict(dict):
     """
 
     def __init__(self, *args, **kwargs):
-        self.__update(*args, **kwargs)
+        self.update(*args, **kwargs)
 
     def __setitem__(self, key, value):
         if isinstance(value, dict):
             value = AttrDict(value)
         super(AttrDict, self).__setitem__(key, value)
 
-    def __update(self, *args, **kwargs):
+    def update(self, *args, **kwargs):
         if len(args) > 1:
             raise TypeError("yo. one argument. not {}".format(len(args)))
         other = dict(*args, **kwargs)
         for key in other:
             self[key] = other[key]
-
-    update = __update
 
     def setdefault(self, key, value=None):
         if key not in self:  # ... uh... python's default behavior is weird
