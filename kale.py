@@ -45,6 +45,9 @@ class GetClassProperty(property):
         return self.fget.__get__(None, owner)()
 
 
+classproperty = GetClassProperty
+
+
 class Cursor(PyMongoCursor):
     """inflatable"""
     def __init__(self, collection, *args, **kwargs):
@@ -75,6 +78,7 @@ class Collection(PyMongoCollection):
         """database is not a name...."""
         super(Collection, self).__init__(database, name, *args, **kwargs)
         self._model_class = model
+        self.raw = lambda: PyMongoCollection(database, name, *args, **kwargs)
 
     def find(self, *args, **kwargs):
         pymongo_cursor = Cursor(self, *args, **kwargs)
@@ -152,7 +156,7 @@ class Model(AttrDict):
 
     __metaclass__ = ABCMeta
 
-    @GetClassProperty
+    @classproperty
     @classmethod
     def _database(cls):
         return connection[DATABASE_NAME]
@@ -161,7 +165,7 @@ class Model(AttrDict):
     def _collection_name(cls):
         """The MongoDB collection name to use. Kale won't guess for you."""
 
-    @GetClassProperty
+    @classproperty
     @classmethod
     def collection(cls):
         """Return the pymongo collection storing instances of the model."""

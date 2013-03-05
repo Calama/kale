@@ -11,6 +11,9 @@ Notes
    eg. `MyModel.collection.find_one()`. It's verbose, but explicit is
    better than implicit.
 
+ * All documents returned by `raw` will be instantiated as models. To get the
+   raw json, use `raw()`, eg. `MyModel.collection.raw().find_one()`.
+
  * Document-level operations are ported down directly to the model, eg.
    `m = MyModel(); m.save()`.
 
