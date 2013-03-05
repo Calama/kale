@@ -1,4 +1,4 @@
-from unittest import TestCase
+import unittest
 from pymongo import MongoClient
 from pymongo.collection import Collection
 from pymongo.errors import DuplicateKeyError, InvalidDocument
@@ -6,7 +6,7 @@ from bson import ObjectId
 import kale
 
 
-class TestModel(TestCase):
+class TestModel(unittest.TestCase):
 
     class EmptyModel(kale.Model):
         _collection_name = 'empty_models'
@@ -129,7 +129,7 @@ class TestModel(TestCase):
         self.assertRaises(InvalidDocument, self.EmptyModel(json).save)
 
 
-class TestModelCollection(TestCase):
+class TestModelCollection(unittest.TestCase):
 
     class EmptyModel(kale.Model):
         _collection_name = 'empty_models'
@@ -157,3 +157,7 @@ class TestModelCollection(TestCase):
         self.connection.fsync()
         out = self.EmptyModel.collection.find()[0]
         assert isinstance(out, self.EmptyModel)
+
+
+if __name__ == '__main__':
+    unittest.main()
