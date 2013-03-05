@@ -6,29 +6,6 @@
     lightweight model base class inspired by minimongo
 
 
-    so should the Model base class inherit from Collection? If yes, then Model
-    should cover a subset of Collection: a set of sets of documents. And then
-    an instance of a Model would be a set of documents. That makes no sense. A
-    model instance is analogous to a document (clearly!).
-
-    It almost feels right because a Collection is a collection of things, and a
-    python class is kind of like a collection of possible instances of things.
-    But it's off a step: a pymongo Collection _instance_ is a collection of
-    things, with Collection being a sort of collection of possible collection
-    instances. A Model instance inheriting from collection should then be a
-    a collection of things. ... ... ...
-
-    So then... does the standard python ORM convention of Model.find even make
-    sense? No. Document.find should not query a collection. It's convenient and
-    looks ok on the surface, but is actually quite weird.
-
-    So... how should a model be connected it the connection its document
-    belongs to? I think it's fine to keep a _reference_ to the collection on
-    the model.
-
-
-    As a result:
-
      * Collection-level operations are accessible though the `.collection`,
        eg. `MyModel.collection.find_one()`. It's verbose, but explicit is
        better than implicit.
@@ -36,16 +13,11 @@
      * Document-level operations are ported down directly to the model, eg.
        `m = MyModel(); m.save()`.
 
-    That feels right to me.
-
-
-    Implications:
-
      * You can't access top-level document keys though dot notation on the
        models after they've been retrieved from the database. urmurmurm.
 
+     * autoref?
 
-    Questions and to-do:
 
     :requires: pymongo
     :copyright: Calama Consulting, written and maintained by uniphil
@@ -55,7 +27,8 @@
 
 from abc import ABCMeta, abstractproperty
 from pymongo import Connection
-#from pymongo.collection import Collection
+from pymongo.collection import Collection as PyMongoCollection
+from pymongo.cursor import Cursor as PyMongoCursor
 
 
 DATABASE_NAME = 'database'
@@ -75,7 +48,7 @@ class LazyThing(object):
         return getattr(self._thing, key)
 
 
-db = LazyThing(Connection)  # you can monkey patch this!
+connection = LazyThing(Connection)  # you can monkey patch this!
 
 
 class WrongLevel(AttributeError):
@@ -83,11 +56,7 @@ class WrongLevel(AttributeError):
 
 
 class GetClassProperty(property):
-    """Make a property-like thing that works on classes and instances.
-
-    It's nice to have access to the collection as a property. It's nice not to
-    have to instantiate the model just to get that property.
-
+    """A property. On a class. Yep.
     Json R. Coombs on StackOverflow: http://stackoverflow.com/a/1383402/1299695
     """
     def __get__(self, cls, owner):
@@ -143,13 +112,65 @@ class AttrDict(dict):
             raise AttributeError(e)
 
 
+class Cursor(PyMongoCursor):
+    """inflatable"""
+    def __init__(self, collection, *args, **kwargs):
+        super(Cursor, self).__init__(collection, *args, **kwargs)
+        self._model_class = collection._model_class
+
+    def next(self):
+        print "nexting"
+        document = super(Cursor, self).next()
+        model_instance = self._model_class.inflate(document)
+        return model_instance
+
+    def __getitem__(self, index):
+        print "getting"
+        if isinstance(index, slice):
+            # pymongo will return an iterator, so next will be called.
+            return super(Cursor, self).__getitem__(index)
+        elif isinstance(index, (int, long)):
+            # get a particular item by index
+            document = super(Cursor, self).__getitem__(index)
+            model_instance = self._model_class.inflate(document)
+            return model_instance
+
+
+class Collection(PyMongoCollection):
+    """Subclass pymongo.collection.Collection
+    So we can hijack returned documents and make them instances of a model."""
+
+    def __init__(self, model, database, name, *args, **kwargs):
+        """database is not a name...."""
+        super(Collection, self).__init__(database, name, *args, **kwargs)
+        self._model_class = model
+
+    def find(self, *args, **kwargs):
+        pymongo_cursor = Cursor(collection=self, *args, **kwargs)
+        return pymongo_cursor
+
+    def find_one(self, *args, **kwargs):
+        print 'finding one from', self.collection
+        document = super(Collection, self).find_one(*args, **kwargs)
+        if document:
+            model_instance = self._model_class.inflate(document)
+            return model_instance
+        return None
+
+
 class Model(AttrDict):
     """Helper methods and properties."""
 
     __metaclass__ = ABCMeta
 
+    @GetClassProperty
+    @classmethod
+    def _database(cls):
+        return connection.DATABASE_NAME
+
     @abstractproperty
     def _collection_name(cls):
+        print 'asdfasfdasdfasf'
         """The MongoDB collection name to use. Kale won't guess for you."""
         return
 
@@ -157,7 +178,10 @@ class Model(AttrDict):
     @classmethod
     def collection(cls):
         """Return the pymongo collection storing instances of the model."""
-        return db[cls._collection_name]
+        if not hasattr(cls, '_collection'):
+            cls._collection = Collection(cls, cls._database,
+                                         cls._collection_name)
+        return cls._collection
 
     def save(self, *args, **kwargs):
         """Create or update the instance in the database. Returns the pymongo
@@ -191,30 +215,3 @@ class Model(AttrDict):
         instance = cls.__new__(cls)
         Model.__init__(instance, json)
         return instance
-
-    # @classmethod
-    # def find_one(cls, *args, **kwargs):
-    #     """Wrap pymongo's find_one to return an instance of the model.
-    #     """
-    #     json = cls.collection.find_one(*args, **kwargs)
-    #     instance = cls.inflate(json)
-    #     return instance
-
-    # def find(cls, *args, **kwargs):
-    #     pass
-
-#     @classmethod
-#     def find(cls, *args, **kwargs):
-#         """Iterable of instances of this model from the query."""
-#         cursor = cls.collection.find(*args, **kwargs)
-#         iterable = inflate_cursor(cursor, cls)
-#         return iterable
-
-
-class M(Model):
-    pass
-
-
-m = M()
-print m
-print dir(m)

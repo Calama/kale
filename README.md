@@ -7,17 +7,15 @@ A convenient superclass and some helpers for stuff you want to keep in mongodb.
 Features
 --------
 
-### CRUD -- methods for model Creation, Reading, Updating, and Deleting
+ * Collection-level operations are accessible though the `.collection`,
+   eg. `MyModel.collection.find_one()`. It's verbose, but explicit is
+   better than implicit.
 
-#### Creating, saving
+ * Document-level operations are ported down directly to the model, eg.
+   `m = MyModel(); m.save()`.
 
-`Model.save()` will call `mongo
+ * You can't access top-level document keys though dot notation on the
+   models after they've been retrieved from the database. urmurmurm.
 
-#### Reading
-
-`Model.find_one()` wraps `pymongo.read_one()`, returning an instantiation of `Model` based on the result of the query, or `None`.
-
-#### Save
-
-`
+ * autoref?
 
