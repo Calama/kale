@@ -146,7 +146,7 @@ class Model(AttrDict):
     @GetClassProperty
     @classmethod
     def _database(cls):
-        return connection.DATABASE_NAME
+        return connection[DATABASE_NAME]
 
     @abstractproperty
     def _collection_name(cls):
