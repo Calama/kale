@@ -2,22 +2,7 @@
 """
     kale
 
-
     lightweight model base class inspired by minimongo
-
-
-     * Collection-level operations are accessible though the `.collection`,
-       eg. `MyModel.collection.find_one()`. It's verbose, but explicit is
-       better than implicit.
-
-     * Document-level operations are ported down directly to the model, eg.
-       `m = MyModel(); m.save()`.
-
-     * You can't access top-level document keys though dot notation on the
-       models after they've been retrieved from the database. urmurmurm.
-
-     * autoref?
-
 
     :requires: pymongo
     :copyright: Calama Consulting, written and maintained by uniphil
@@ -31,24 +16,19 @@ from pymongo.collection import Collection as PyMongoCollection
 from pymongo.cursor import Cursor as PyMongoCursor
 
 
-DATABASE_NAME = 'database'
-
-
 class LazyThing(object):
-
-    def __init__(self, cls, *args, **kwargs):
-        self._cls = cls
-        self._inst_args = args
-        self._inst_kwargs = kwargs
+    """Delay something's instantiation until an attribute is requested"""
+    def __init__(self, class_):
+        self.class_ = class_
 
     def __getattr__(self, key):
         if not hasattr(self, '_thing'):
-            inst = self._cls(*self._inst_args, **self._inst_kwargs)
-            setattr(self, '_thing', inst)
+            setattr(self, '_thing', self.class_())
         return getattr(self._thing, key)
 
 
 connection = LazyThing(Connection)  # you can monkey patch this!
+DATABASE_NAME = 'database'  # and this!
 
 
 class WrongLevel(AttributeError):
@@ -192,14 +172,6 @@ class Model(AttrDict):
     def insert(self, *args, **kwargs):
         """Save as a new document in the database. Wraps collection.insert"""
         return self.collection.insert(self, *args, **kwargs)
-
-    def update(self, spec=None, document=None, *args, **kwargs):
-        """Update the current document (only!) in the database."""
-        if spec or document:
-            raise WrongLevel('Collection-level updates should be called on '
-                             'Model.collection.update(...), not Model.updat()')
-        spec = {'_id': self._id}
-        return self.collection.update(spec=spec, document=self)
 
     def remove(self, spec=None, *args, **kwargs):
         """Remove this document from the databse."""

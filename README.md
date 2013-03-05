@@ -17,5 +17,13 @@ Features
  * You can't access top-level document keys though dot notation on the
    models after they've been retrieved from the database. urmurmurm.
 
- * autoref?
+ * There is no model-level `update`, since it clashes with `dict`'s `update`.
+   Use `save`, or `Model.collection.update(instance, ...)`.
 
+ * The model-level `remove` is restricted to only remove the model's document.
+
+
+Missing
+-------
+
+ * autoref?
