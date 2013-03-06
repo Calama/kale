@@ -11,22 +11,8 @@
 
 
 from abc import ABCMeta, abstractproperty
-from pymongo import MongoClient
 from pymongo.collection import Collection as PyMongoCollection
 from pymongo.cursor import Cursor as PyMongoCursor
-
-
-class LazyMongoClient(object):
-    """create the connection only when asked for"""
-    def __init__(self, connection_class):
-        self.connection_class = connection_class
-
-    def __getitem__(self, key):
-        try:
-            return self._connection[key]
-        except AttributeError:
-            self._connection = self.connection_class()
-            return self._connection[key]
 
 
 connection = LazyMongoClient(MongoClient)  # you can monkey patch this!
@@ -72,7 +58,8 @@ class Cursor(PyMongoCursor):
 
 class Collection(PyMongoCollection):
     """Subclass pymongo.collection.Collection
-    So we can hijack returned documents and make them instances of a model."""
+    So we can hijack returned documents and make them instances of a model.
+    """
 
     def __init__(self, model, database, name, *args, **kwargs):
         """database is not a name...."""
@@ -156,10 +143,9 @@ class Model(AttrDict):
 
     __metaclass__ = ABCMeta
 
-    @classproperty
-    @classmethod
+    @abstractproperty
     def _database(cls):
-        return connection[DATABASE_NAME]
+        """The pymongo database"""
 
     @abstractproperty
     def _collection_name(cls):
