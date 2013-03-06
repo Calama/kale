@@ -35,6 +35,9 @@ is enough for you. Start there.
 
 
 ```python
+Python 2.7.3 (default, Sep 26 2012, 21:51:14) 
+[GCC 4.7.2] on linux2
+Type "help", "copyright", "credits" or "license" for more information.
 >>> from pymongo import MongoClient
 >>> from kale import Model
 >>> 
@@ -60,9 +63,9 @@ is enough for you. Start there.
 ... 
 >>> alice = User('alice', 'abc123')
 >>> alice.save()
-ObjectId('5137a2f1360e2e12f0ed3374')
+ObjectId('5137a57d360e2e139105db4f')
 >>> alice
-{'username': 'alice', 'pw_hash': '979899495051', '_id': ObjectId('5137a2f1360e2e12f0ed3374')}
+{'username': 'alice', 'pw_hash': '979899495051', '_id': ObjectId('5137a57d360e2e139105db4f')}
 >>> del alice
 >>> 
 >>> def login(username, password):
@@ -72,11 +75,19 @@ ObjectId('5137a2f1360e2e12f0ed3374')
 ...     else:
 ...         return 'Bad login!'
 ... 
->>> login('alice', '123456')
+>>> faker = login('alice', '123456')
+>>> faker
 'Bad login!'
 >>> 
->>> login('alice', 'abc123')
-{u'username': u'alice', u'pw_hash': u'979899495051', u'_id': ObjectId('5137a2f1360e2e12f0ed3374')}
+>>> real_alice = login('alice', 'abc123')
+>>> real_alice
+{u'username': u'alice', u'pw_hash': u'979899495051', u'_id': ObjectId('5137a57d360e2e139105db4f')}
+>>> type(real_alice)
+<class '__main__.User'>
+>>> 
+>>> real_alice.set_password('password')
+>>> real_alice.save()
+ObjectId('5137a57d360e2e139105db4f')
 ```
 
 
