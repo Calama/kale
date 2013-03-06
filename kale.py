@@ -15,10 +15,6 @@ from pymongo.collection import Collection as PyMongoCollection
 from pymongo.cursor import Cursor as PyMongoCursor
 
 
-connection = LazyMongoClient(MongoClient)  # you can monkey patch this!
-DATABASE_NAME = 'database'  # and this!
-
-
 class WrongLevel(AttributeError):
     pass
 
