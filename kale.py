@@ -10,9 +10,8 @@
 """
 
 
-from abc import ABCMeta, abstractproperty
-from pymongo.collection import Collection as PyMongoCollection
-from pymongo.cursor import Cursor as PyMongoCursor
+import abc
+import pymongo
 
 
 class WrongLevel(AttributeError):
@@ -30,7 +29,7 @@ class GetClassProperty(property):
 classproperty = GetClassProperty
 
 
-class Cursor(PyMongoCursor):
+class Cursor(pymongo.cursor.Cursor):
     """inflatable"""
     def __init__(self, collection, *args, **kwargs):
         super(Cursor, self).__init__(collection, *args, **kwargs)
@@ -52,20 +51,20 @@ class Cursor(PyMongoCursor):
             return model_instance
 
 
-class Collection(PyMongoCollection):
+class Collection(pymongo.collection.Collection):
     """Subclass pymongo.collection.Collection
     So we can hijack returned documents and make them instances of a model.
     """
 
     def __init__(self, model, database, name, *args, **kwargs):
-        """database is not a name...."""
+        """make sure database is a pymongo database, not a string name"""
         super(Collection, self).__init__(database, name, *args, **kwargs)
         self._model_class = model
         self.raw = lambda: PyMongoCollection(database, name, *args, **kwargs)
 
     def find(self, *args, **kwargs):
-        pymongo_cursor = Cursor(self, *args, **kwargs)
-        return pymongo_cursor
+        cursor = Cursor(self, *args, **kwargs)
+        return cursor
 
     def find_one(self, *args, **kwargs):
         document = super(Collection, self).find_one(*args, **kwargs)
@@ -132,18 +131,18 @@ class Model(AttrDict):
         """
         if cls is Model:
             raise TypeError('Only instantiate subclasses of kale.Model')
-        if isinstance(cls._collection_name, abstractproperty):
+        if isinstance(cls._collection_name, abc.abstractproperty):
             raise TypeError('You had better define a _collection_name...')
         instance = super(Model, cls).__new__(cls, *args, **kwargs)
         return instance
 
-    __metaclass__ = ABCMeta
+    __metaclass__ = abc.ABCMeta
 
-    @abstractproperty
+    @abc.abstractproperty
     def _database(cls):
         """The pymongo database"""
 
-    @abstractproperty
+    @abc.abstractproperty
     def _collection_name(cls):
         """The MongoDB collection name to use. Kale won't guess for you."""
 

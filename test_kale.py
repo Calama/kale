@@ -1,38 +1,32 @@
 import unittest
-from pymongo import MongoClient
-from pymongo.collection import Collection
-from pymongo.errors import DuplicateKeyError, InvalidDocument
+import pymongo
 from bson import ObjectId
 import kale
 
 
 class TestModel(unittest.TestCase):
 
-    class EmptyModel(kale.Model):
-        _collection_name = 'empty_models'
-
     def setUp(self):
-        self.connection = MongoClient()
-        self.dbs = 'kale_testing_database', 'kale_testing_database_alt'
-        kale.connection = MongoClient()
-        kale.DATABASE_NAME = self.dbs[0]
+        self.connection = pymongo.MongoClient()
+        self.database_name = 'kale_testing_database'
+
+        class EmptyModel(kale.Model):
+            _database = self.connection[self.database_name]
+            _collection_name = 'empty_models'
+
+        self.EmptyModel = EmptyModel
 
     def tearDown(self):
-        self.connection.drop_database(self.dbs[0])
-        self.connection.drop_database(self.dbs[1])
+        self.connection.drop_database(self.database_name)
 
     def test_base_model(self):
         self.assertRaises(TypeError, kale.Model)
 
-    def test_database_name(self):
-        self.assertEqual(self.EmptyModel._database.name, self.dbs[0])
-        kale.DATABASE_NAME = self.dbs[1]
-        self.assertEqual(self.EmptyModel._database.name, self.dbs[1])
-
     def test_collection(self):
-        assert isinstance(self.EmptyModel.collection, Collection)
+        assert isinstance(self.EmptyModel.collection,
+            pymongo.collection.Collection)
         em = self.EmptyModel()
-        assert isinstance(em.collection, Collection)
+        assert isinstance(em.collection, pymongo.collection.Collection)
 
     def test_collection_name(self):
         class NoName(kale.Model):
@@ -62,7 +56,7 @@ class TestModel(unittest.TestCase):
         instance = self.EmptyModel()
         instance.insert()
         assert '_id' in instance
-        self.assertRaises(DuplicateKeyError, instance.insert)
+        self.assertRaises(pymongo.errors.DuplicateKeyError, instance.insert)
         instance2 = self.EmptyModel()
         instance2.insert()
         assert instance._id != instance2._id
@@ -126,25 +120,24 @@ class TestModel(unittest.TestCase):
         json = {
             'set': {1, 2, 3}
         }
-        self.assertRaises(InvalidDocument, self.EmptyModel(json).save)
+        instance = self.EmptyModel(json)
+        self.assertRaises(pymongo.errors.InvalidDocument, instance.save)
 
 
 class TestModelCollection(unittest.TestCase):
 
-    class EmptyModel(kale.Model):
-        _collection_name = 'empty_models'
-
     def setUp(self):
-        self.db_name = 'kale_testing_database'
-        self.connection = MongoClient()
-        self.db = self.connection[self.db_name]
-        kale.connection = MongoClient()
-        kale.DATABASE_NAME = self.db_name
+        self.connection = pymongo.MongoClient()
+        self.database_name = 'kale_testing_database'
 
-        #self.EmptyModel({'a':1, 'b':})
+        class EmptyModel(kale.Model):
+            _database = self.connection[self.database_name]
+            _collection_name = 'empty_models'
+
+        self.EmptyModel = EmptyModel
 
     def tearDown(self):
-        self.connection.drop_database(self.db_name)
+        self.connection.drop_database(self.database_name)
 
     def test_find_one_type(self):
         self.EmptyModel().save()
