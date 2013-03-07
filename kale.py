@@ -179,3 +179,7 @@ class Model(AttrDict):
         instance = cls.__new__(cls)
         Model.__init__(instance, json)
         return instance
+
+    def __repr__(self):
+        dict_repr = dict.__repr__(self)
+        return '<kale.Model {}>'.format(dict_repr)
