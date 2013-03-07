@@ -136,8 +136,6 @@ class Model(AttrDict):
         instance = super(Model, cls).__new__(cls, *args, **kwargs)
         return instance
 
-    __metaclass__ = abc.ABCMeta
-
     @abc.abstractproperty
     def _database(cls):
         """The pymongo database"""
