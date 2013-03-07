@@ -16,7 +16,7 @@ readme = open('README.md').read()
 
 setup(
     name='kale',
-    version='0.1rc4',
+    version='0.1rc5',
     author='Philip Schleihauf',
     author_email='uniphil@gmail.com',
     license=':) released by Calama Consulting',

@@ -151,6 +151,13 @@ class TestModelCollection(unittest.TestCase):
         out = self.EmptyModel.collection.find()[0]
         assert isinstance(out, self.EmptyModel)
 
+    def test_raw_collection(self):
+        self.EmptyModel().save()
+        self.connection.fsync()
+        out = self.EmptyModel.collection.raw().find_one()
+        assert isinstance(out, dict)
+        assert not isinstance(out, self.EmptyModel)
+
 
 if __name__ == '__main__':
     unittest.main()

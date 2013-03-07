@@ -60,7 +60,8 @@ class Collection(pymongo.collection.Collection):
         """make sure database is a pymongo database, not a string name"""
         super(Collection, self).__init__(database, name, *args, **kwargs)
         self._model_class = model
-        self.raw = lambda: PyMongoCollection(database, name, *args, **kwargs)
+        self.raw = lambda: pymongo.collection.Collection(
+                                            database, name, *args, **kwargs)
 
     def find(self, *args, **kwargs):
         cursor = Cursor(self, *args, **kwargs)
