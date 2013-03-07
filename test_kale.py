@@ -123,6 +123,55 @@ class TestModel(unittest.TestCase):
         instance = self.EmptyModel(json)
         self.assertRaises(pymongo.errors.InvalidDocument, instance.save)
 
+    def test_descriptor_setter(self):
+        class DescModel(kale.Model):
+            _database = self.connection[self.database_name]
+            _collection_name = 'empty_models'
+            def blah():
+                def fget(self):
+                    return None
+                def fset(self, val):
+                    self.described = val
+                return locals()
+            blah = property(**blah())
+        d = DescModel()
+        d.blah = 'hello'
+        self.assertEqual(d.described, 'hello')
+
+    def test_descriptor_deleter(self):
+        class DescModel(kale.Model):
+            _database = self.connection[self.database_name]
+            _collection_name = 'empty_models'
+            def blah():
+                def fget(self):
+                    pass
+                def fset(self, val):
+                    pass
+                def fdel(self):
+                    self.deleted = 'yeah'
+                return locals()
+            blah = property(**blah())
+        d = DescModel()
+        del d.blah
+        self.assertEqual(d.deleted, 'yeah')
+
+    def test_inherited_descriptior_setter(self):
+        class DescModel(kale.Model):
+            _database = self.connection[self.database_name]
+            _collection_name = 'empty_models'
+            def blah():
+                def fget(self):
+                    return None
+                def fset(self, val):
+                    self.described = val
+                return locals()
+            blah = property(**blah())
+        class ExtendDescModel(DescModel):
+            pass
+        ed = ExtendDescModel()
+        ed.blah = 'hello'
+        self.assertEqual(ed.described, 'hello')
+
 
 class TestModelCollection(unittest.TestCase):
 

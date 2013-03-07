@@ -16,11 +16,12 @@ readme = open('README.md').read()
 
 setup(
     name='kale',
-    version='0.1rc5',
+    version='0.1rc6',
     author='Philip Schleihauf',
     author_email='uniphil@gmail.com',
+    url='https://github.com/Calama/kale',
     license=':) released by Calama Consulting',
-    description='Mongodb model helpers',
+    description='Tiny PyMongo model layer',
     long_description=readme,
     install_requires=['pymongo'],
     py_modules=['kale'],

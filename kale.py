@@ -109,6 +109,11 @@ class AttrDict(dict):
 
     def __setattr__(self, attr, value):
         """Set items with dot notation"""
+        # check for class stuff, like descripters, before hijacking.
+        # http://stackoverflow.com/a/9161707/1299695
+        for cls in self.__class__.__mro__ + (self,):
+            if attr in cls.__dict__:
+                return object.__setattr__(self, attr, value)
         try:
             self[attr] = value
         except KeyError as e:
@@ -116,6 +121,10 @@ class AttrDict(dict):
 
     def __delattr__(self, key):
         """Delete items with dot notation"""
+        # see AttrDict.__setattr__()
+        for cls in self.__class__.__mro__ + (self,):
+            if key in cls.__dict__:
+                return object.__delattr__(self, key)
         try:
             return super(AttrDict, self).__delitem__(key)
         except KeyError as e:  # it was accessed as an attribute.
