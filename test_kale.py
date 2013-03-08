@@ -229,6 +229,14 @@ class TestModelCollection(unittest.TestCase):
         assert isinstance(out, dict)
         assert not isinstance(out, self.EmptyModel)
 
+    def test_sub_subclass_type(self):
+        class SubSubModel(self.EmptyModel):
+            _collection_name = 'test_subnode'
+        _id = SubSubModel().save()
+        loaded = SubSubModel.collection.find_one(_id)
+        assert isinstance(loaded, SubSubModel), 'loaded subnode is not a subnode'
+        SubSubModel.collection.drop()
+
 
 if __name__ == '__main__':
     unittest.main()
