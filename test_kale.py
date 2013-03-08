@@ -24,7 +24,7 @@ class TestModel(unittest.TestCase):
 
     def test_collection(self):
         assert isinstance(self.EmptyModel.collection,
-            pymongo.collection.Collection)
+                          pymongo.collection.Collection)
         em = self.EmptyModel()
         assert isinstance(em.collection, pymongo.collection.Collection)
 
@@ -127,11 +127,14 @@ class TestModel(unittest.TestCase):
         class DescModel(kale.Model):
             _database = self.connection[self.database_name]
             _collection_name = 'empty_models'
+
             def blah():
                 def fget(self):
                     return None
+
                 def fset(self, val):
                     self.described = val
+
                 return locals()
             blah = property(**blah())
         d = DescModel()
@@ -142,13 +145,17 @@ class TestModel(unittest.TestCase):
         class DescModel(kale.Model):
             _database = self.connection[self.database_name]
             _collection_name = 'empty_models'
+
             def blah():
                 def fget(self):
                     pass
+
                 def fset(self, val):
                     pass
+
                 def fdel(self):
                     self.deleted = 'yeah'
+
                 return locals()
             blah = property(**blah())
         d = DescModel()
@@ -159,18 +166,29 @@ class TestModel(unittest.TestCase):
         class DescModel(kale.Model):
             _database = self.connection[self.database_name]
             _collection_name = 'empty_models'
+
             def blah():
                 def fget(self):
                     return None
+
                 def fset(self, val):
                     self.described = val
+
                 return locals()
             blah = property(**blah())
+
         class ExtendDescModel(DescModel):
             pass
+
         ed = ExtendDescModel()
         ed.blah = 'hello'
         self.assertEqual(ed.described, 'hello')
+
+    def test_setting_models(self):
+        a = self.EmptyModel()
+        b = self.EmptyModel()
+        a.b = b
+        assert isinstance(a.b, type(b))
 
 
 class TestModelCollection(unittest.TestCase):

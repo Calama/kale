@@ -61,7 +61,7 @@ class Collection(pymongo.collection.Collection):
         super(Collection, self).__init__(database, name, *args, **kwargs)
         self._model_class = model
         self.raw = lambda: pymongo.collection.Collection(
-                                            database, name, *args, **kwargs)
+            database, name, *args, **kwargs)
 
     def find(self, *args, **kwargs):
         cursor = Cursor(self, *args, **kwargs)
@@ -84,7 +84,7 @@ class AttrDict(dict):
         self.update(*args, **kwargs)
 
     def __setitem__(self, key, value):
-        if isinstance(value, dict):
+        if isinstance(value, dict) and not isinstance(value, AttrDict):
             value = AttrDict(value)
         super(AttrDict, self).__setitem__(key, value)
 
