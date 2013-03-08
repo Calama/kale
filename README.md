@@ -63,9 +63,9 @@ Type "help", "copyright", "credits" or "license" for more information.
 ... 
 >>> alice = User('alice', 'abc123')
 >>> alice.save()
-ObjectId('5137a57d360e2e139105db4f')
+ObjectId('513a4a99360e2e1697b81f15')
 >>> alice
-{'username': 'alice', 'pw_hash': '979899495051', '_id': ObjectId('5137a57d360e2e139105db4f')}
+<User: {'username': 'alice', 'pw_hash': '979899495051', '_id': ObjectId('513a4a99360e2e1697b81f15')}>
 >>> del alice
 >>> 
 >>> def login(username, password):
@@ -81,13 +81,13 @@ ObjectId('5137a57d360e2e139105db4f')
 >>> 
 >>> real_alice = login('alice', 'abc123')
 >>> real_alice
-{u'username': u'alice', u'pw_hash': u'979899495051', u'_id': ObjectId('5137a57d360e2e139105db4f')}
->>> type(real_alice)
-<class '__main__.User'>
->>> 
+<User: {u'username': u'alice', u'pw_hash': u'979899495051', u'_id': ObjectId('513a4a99360e2e1697b81f15')}>
 >>> real_alice.set_password('password')
 >>> real_alice.save()
-ObjectId('5137a57d360e2e139105db4f')
+ObjectId('513a4a99360e2e1697b81f15')
+>>> 
+>>> User.collection.drop()
+>>> 
 ```
 
 
@@ -103,7 +103,9 @@ You need to define two things in your models:
 
 Your model will be provided with four attributes you should know about:
 
- 1, 2, 3. `Model.save`, `Model.insert`, `Model.remove`: These functions map
+ 1. `Model.save`,
+ 2. `Model.insert`,
+ 3. `Model.remove`: These functions map
     almost directly to `PyMongo`'s `Collection.save`, etc. However, they are
     inteded for use on _instances of your model_. So you don't need to pass
     anything to them. If you have an instance of something, you can just call
@@ -122,17 +124,14 @@ Notes
 -----
 
  * Collection-level operations are accessible though the `.collection`,
-   eg. `MyModel.collection.find_one()`. It's verbose, but explicit is
-   better than implicit.
+   eg. `MyModel.collection.find_one()`.
 
- * All documents returned by `raw` will be instantiated as models. To get the
-   raw json, use `raw()`, eg. `MyModel.collection.raw().find_one()`.
+ * All documents returned through the collection will be instantiated as
+   models. To get the raw json document, use `raw()`, eg.
+   `MyModel.collection.raw().find_one()`.
 
  * Document-level operations are ported down directly to the model, eg.
-   `m = MyModel(); m.save()`.
-
- * You can't access top-level document keys though dot notation on the
-   models after they've been retrieved from the database.
+   `MyModel().save()`. The model's `_id` will be passed in where appropriate.
 
  * There is no model-level `update`, since it clashes with `dict`'s `update`.
    Use `save`, or `Model.collection.update(instance, ...)`.
@@ -141,4 +140,4 @@ Notes
 
  * No special ref support... yet.
 
- * Tests are desperately lacking. Help!
+ * Feedback and tests welcome!

@@ -190,4 +190,4 @@ class Model(AttrDict):
 
     def __repr__(self):
         dict_repr = dict.__repr__(self)
-        return '<kale.Model {}>'.format(dict_repr)
+        return '<{}: {}>'.format(self.__class__.__name__, dict_repr)

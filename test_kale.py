@@ -34,6 +34,10 @@ class TestModel(unittest.TestCase):
         self.assertRaises(TypeError, NoName)
         self.assertEqual(self.EmptyModel.collection.name, 'empty_models')
 
+    def test_repr_doesnt_break(self):
+        e = self.EmptyModel()
+        print repr(e)
+
     def test_save(self):
         instance = self.EmptyModel()
         _id = instance.save()
