@@ -21,8 +21,6 @@ class User(Model):
         hashed_challenge = super_insecure_hash(password_challenge)
         return hashed_challenge == self.pw_hash  # true if they match
 
-User.collection.drop()
-
 alice = User('alice', 'abc123')
 alice.save()
 alice
@@ -42,3 +40,5 @@ real_alice = login('alice', 'abc123')
 real_alice
 real_alice.set_password('password')
 real_alice.save()
+
+User.collection.drop()
