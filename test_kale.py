@@ -79,6 +79,10 @@ class TestModel(unittest.TestCase):
         self.assertEqual(self.EmptyModel.collection.count(), 0)
         assert '_id' not in instance
 
+    def test_unsaved_remove(self):
+        instance = self.EmptyModel()
+        instance.remove()
+
     def test_simple_inflate(self):
         json = {}
         instance = self.EmptyModel.inflate(json)
@@ -234,7 +238,8 @@ class TestModelCollection(unittest.TestCase):
             _collection_name = 'test_subnode'
         _id = SubSubModel().save()
         loaded = SubSubModel.collection.find_one(_id)
-        assert isinstance(loaded, SubSubModel), 'loaded subnode is not a subnode'
+        assert isinstance(loaded, SubSubModel),\
+            'loaded subnode is not a subnode'
         SubSubModel.collection.drop()
 
 
