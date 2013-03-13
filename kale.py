@@ -178,8 +178,9 @@ class Model(AttrDict):
         if spec:
             raise WrongLevel('Collection-level removes blah blah blah use '
                              'Model.collection.remove(spec)')
-        spec = {'_id': self.pop('_id')}
-        return self.collection.remove(spec=spec)
+        if '_id' in self:
+            spec = {'_id': self.pop('_id')}
+            return self.collection.remove(spec=spec)
 
     @classmethod
     def inflate(cls, json):
