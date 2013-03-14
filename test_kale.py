@@ -131,6 +131,23 @@ class TestModel(unittest.TestCase):
         instance = self.EmptyModel(json)
         self.assertRaises(pymongo.errors.InvalidDocument, instance.save)
 
+    def test_descriptor_getter(self):
+        class DescModel(kale.Model):
+            _database = self.connection[self.database_name]
+            _collection_name = 'empty_models'
+
+            @property
+            def thing(self):
+                return self.lalala
+
+        d = DescModel()
+        with self.assertRaises(AttributeError):
+            d.thing
+        try:
+            d.thing
+        except AttributeError as e:
+            self.assertNotEqual(e.message, 'AttributeError: thing')
+
     def test_descriptor_setter(self):
         class DescModel(kale.Model):
             _database = self.connection[self.database_name]

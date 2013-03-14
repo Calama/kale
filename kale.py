@@ -105,6 +105,10 @@ class AttrDict(dict):
         try:
             return super(AttrDict, self).__getitem__(attr)
         except KeyError as e:
+            the_attribute = getattr(type(self), attr)
+            if hasattr(the_attribute, '__get__'):
+                raise AttributeError('An AttributeError was raised inside the'
+                                     'descriptor "{}".'.format(attr))
             raise AttributeError(e)  # it was accessed as an attribute!
 
     def __setattr__(self, attr, value):
