@@ -196,7 +196,17 @@ class TestModel(unittest.TestCase):
         a = self.EmptyModel()
         b = self.EmptyModel()
         a.b = b
-        assert isinstance(a.b, type(b))
+        assert isinstance(a.b, type(b)), 'b is not a b'
+
+    def test_aggressive_remove(self):
+        a = self.EmptyModel()
+        b = self.EmptyModel()
+        b.save()
+        a.b_id = b._id
+        a_id = a.save()
+        b.remove()
+        a_in_db = self.EmptyModel.collection.find_one(a_id)
+        assert a_in_db is not None, 'a was removed through b...'
 
 
 class TestModelCollection(unittest.TestCase):
