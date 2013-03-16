@@ -152,7 +152,7 @@ class TestModel(unittest.TestCase):
         try:
             d.thing
         except AttributeError as e:
-            self.assertNotEqual(e.message, 'AttributeError: thing')
+            self.assertNotEqual(str(e), 'AttributeError: thing')
 
     def test_attributeerror_propagates(self):
         class DescModel(kale.Model):
@@ -169,8 +169,8 @@ class TestModel(unittest.TestCase):
         try:
             d.thing
         except AttributeError as e:
-            print e
-            assert 'lalala' in e.message, 'wrong attribute error'
+            print(e)
+            assert 'lalala' in str(e), 'wrong attribute error'
 
     def test_descriptor_setter(self):
         class DescModel(kale.Model):
