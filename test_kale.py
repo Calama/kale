@@ -175,6 +175,37 @@ class TestModel(unittest.TestCase):
 
 class TestAttrDict(unittest.TestCase):
 
+    def test_key_attr_equiv(self):
+        ad = kale.AttrDict()
+        ad.a = 1
+        self.assertEqual(ad['a'], 1)
+        ad['a'] = 0
+        self.assertEqual(ad.a, 0)
+
+    def test_update(self):
+        ad = kale.AttrDict()
+        ad.update({'a': 1})
+        self.assertEqual(ad.a, 1)
+
+    def test_in(self):
+        ad = kale.AttrDict()
+        ad.a = 'b'
+        self.assertIn('a', ad)
+
+    def test_get(self):
+        ad = kale.AttrDict()
+        ad.a = 'b'
+        self.assertEqual(ad.get('a'), getattr(ad, 'a'))
+        self.assertIs(ad.get('lalala'), None)
+
+    def test_bad_attr(self):
+        """valid keys that are bad attributes are allowed"""
+        ad = kale.AttrDict()
+        ad['a b c'] = 1
+        self.assertIn('a b c', ad)
+        ad[1] = 2
+        self.assertIn(1, ad)
+
     def test_bad_multi_arg_update(self):
         ad = kale.AttrDict()
         with self.assertRaises(TypeError):

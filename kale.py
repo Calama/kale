@@ -76,7 +76,7 @@ class Collection(pymongo.collection.Collection):
 
 class AttrDict(dict):
     """A dictionary whose keys are accessible with dot notation
-    cool __setitem__ -> http://stackoverflow.com/a/2588648/1299695
+    nifty __setitem__ from http://stackoverflow.com/a/2588648/1299695
     """
 
     def __init__(self, *args, **kwargs):
@@ -115,8 +115,7 @@ class AttrDict(dict):
 
     def __setattr__(self, attr, value):
         """Set items with dot notation"""
-        # check for class stuff, like descripters, before hijacking.
-        # http://stackoverflow.com/a/9161707/1299695
+        # check for descripters http://stackoverflow.com/a/9161707/1299695
         for cls in self.__class__.__mro__ + (self,):
             if attr in cls.__dict__:
                 return object.__setattr__(self, attr, value)
@@ -124,7 +123,7 @@ class AttrDict(dict):
 
     def __delattr__(self, key):
         """Delete items with dot notation"""
-        # see AttrDict.__setattr__()
+        # check for descriptors
         for cls in self.__class__.__mro__ + (self,):
             if key in cls.__dict__:
                 return object.__delattr__(self, key)
