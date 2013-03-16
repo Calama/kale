@@ -249,6 +249,16 @@ class TestModel(unittest.TestCase):
         a_in_db = self.EmptyModel.collection.find_one(a_id)
         assert a_in_db is not None, 'a was removed through b...'
 
+    def test_is_saved(self):
+        a = self.EmptyModel()
+        assert a.is_in_db() is False, 'the model has not been saved...'
+        a.save()
+        assert a.is_in_db() is True, 'the model should be saved...'
+        a.remove()
+        assert a.is_in_db() is False, 'the model should be removed...'
+        a.save()
+        assert a.is_in_db() is True, 'the model should be re-saved...'
+
 
 class TestModelCollection(unittest.TestCase):
 
