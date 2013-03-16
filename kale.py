@@ -99,10 +99,9 @@ class AttrDict(dict):
             self[key] = value
         return self[key]
 
-    def copy(self, *args, **kwargs):
+    def copy(self):
         """Return a shallow copy"""
-        new = type(self)(self)
-        return new
+        return type(self)(self)
 
     def __getattribute__(self, attr):
         """Access items with dot notation."""
