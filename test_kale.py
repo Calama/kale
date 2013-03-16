@@ -5,6 +5,10 @@ from bson import ObjectId
 import kale
 
 
+class ImportableAttrDictSub(kale.AttrDict):
+    pass
+
+
 class TestModel(unittest.TestCase):
 
     def setUp(self):
@@ -230,6 +234,16 @@ class TestAttrDict(unittest.TestCase):
         ad.c = 'd'
         challenge = {'a': 'b', 'c': 'd'}
         self.assertEqual(ad.items(), challenge.items())
+
+    def test_repr(self):
+        init = {'a': 'b'}
+        ad = kale.AttrDict(init)
+        r = repr(ad)
+        rad = eval(r)
+        self.assertIsInstance(rad, kale.AttrDict)
+        self.assertEqual(ad, rad)
+        s = ImportableAttrDictSub(init)
+        assert repr(s).startswith('test_kale.ImportableAttrDictSub'), 'bad cls'
 
     def test_descriptor_getter(self):
         class AttrModel(kale.AttrDict):

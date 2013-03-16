@@ -133,6 +133,11 @@ class AttrDict(dict):
         except KeyError as e:  # it was accessed as an attribute.
             raise AttributeError(e)
 
+    def __repr__(self):
+        name = ".".join([self.__module__, self.__class__.__name__])
+        constructable = super(AttrDict, self).__repr__()
+        return "{}({})".format(name, constructable)
+
 
 class Model(AttrDict):
     """Helper methods and properties."""
@@ -194,7 +199,3 @@ class Model(AttrDict):
         instance = cls.__new__(cls)
         Model.__init__(instance, json)
         return instance
-
-    def __repr__(self):
-        dict_repr = dict.__repr__(self)
-        return '<{}: {}>'.format(self.__class__.__name__, dict_repr)
