@@ -36,7 +36,7 @@ class TestModel(unittest.TestCase):
 
     def test_repr_doesnt_break(self):
         e = self.EmptyModel()
-        print repr(e)
+        print(repr(e))
 
     def test_save(self):
         instance = self.EmptyModel()
@@ -108,7 +108,10 @@ class TestModel(unittest.TestCase):
         self.connection.fsync()
         json_out = self.EmptyModel.collection.find_one()
         assert isinstance(json_out.list, list)
-        assert isinstance(json_out.string, unicode)
+        try:
+            assert isinstance(json_out.string, unicode)  # py2x
+        except NameError:
+            assert isinstance(json_out.string, str)  # py3
         assert isinstance(json_out.nest, dict)
         assert isinstance(json_out.dt, datetime)
         assert isinstance(json_out.bool, bool)
