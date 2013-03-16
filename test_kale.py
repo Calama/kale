@@ -84,6 +84,11 @@ class TestModel(unittest.TestCase):
         instance = self.EmptyModel()
         instance.remove()
 
+    def test_wronglevel_remove(self):
+        instance = self.EmptyModel()
+        with self.assertRaises(kale.WrongLevel):
+            instance.remove({'_id': '1234'})
+
     def test_simple_inflate(self):
         json = {}
         instance = self.EmptyModel.inflate(json)
@@ -138,6 +143,7 @@ class TestModel(unittest.TestCase):
                 instance.save()
 
     def test_descriptor_getter(self):
+        """should be moved to attrdict tests"""
         class DescModel(kale.Model):
             _database = self.connection[self.database_name]
             _collection_name = 'empty_models'
@@ -155,6 +161,7 @@ class TestModel(unittest.TestCase):
             self.assertNotEqual(str(e), 'AttributeError: thing')
 
     def test_attributeerror_propagates(self):
+        """should be moved to attrdict tests"""
         class DescModel(kale.Model):
             _database = self.connection[self.database_name]
             _collection_name = 'empty_models'
@@ -173,6 +180,7 @@ class TestModel(unittest.TestCase):
             assert 'lalala' in str(e), 'wrong attribute error'
 
     def test_descriptor_setter(self):
+        """should be moved to attrdict tests"""
         class DescModel(kale.Model):
             _database = self.connection[self.database_name]
             _collection_name = 'empty_models'
@@ -191,6 +199,7 @@ class TestModel(unittest.TestCase):
         self.assertEqual(d.described, 'hello')
 
     def test_descriptor_deleter(self):
+        """should be moved to attrdict tests"""
         class DescModel(kale.Model):
             _database = self.connection[self.database_name]
             _collection_name = 'empty_models'
@@ -212,6 +221,7 @@ class TestModel(unittest.TestCase):
         self.assertEqual(d.deleted, 'yeah')
 
     def test_inherited_descriptior_setter(self):
+        """should be move to AttrDict tests"""
         class DescModel(kale.Model):
             _database = self.connection[self.database_name]
             _collection_name = 'empty_models'
@@ -260,6 +270,26 @@ class TestModel(unittest.TestCase):
         assert a.is_in_db() is True, 'the model should be re-saved...'
 
 
+class TestAttrDict(unittest.TestCase):
+
+    def test_bad_multi_arg_update(self):
+        ad = kale.AttrDict()
+        with self.assertRaises(TypeError):
+            ad.update({}, {})
+
+    def test_set_default(self):
+        ad = kale.AttrDict()
+        ad.setdefault('a')
+        self.assertEqual(ad['a'], None)
+        ad.setdefault('b', 1)
+        self.assertEqual(ad['b'], 1)
+
+    def test_bad_delattr(self):
+        ad = kale.AttrDict()
+        with self.assertRaises(AttributeError):
+            del ad.lalala
+
+
 class TestModelCollection(unittest.TestCase):
 
     def setUp(self):
@@ -286,6 +316,12 @@ class TestModelCollection(unittest.TestCase):
         self.connection.fsync()
         out = self.EmptyModel.collection.find()[0]
         assert isinstance(out, self.EmptyModel)
+
+    def test_cursor_slice(self):
+        for model in range(5):
+            self.EmptyModel().save()
+        self.connection.fsync()
+        self.EmptyModel.collection.find()[2:4]
 
     def test_raw_collection(self):
         self.EmptyModel().save()

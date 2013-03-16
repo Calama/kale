@@ -14,12 +14,6 @@ import abc
 import pymongo
 
 
-try:
-    long
-except NameError:
-    long = int  # py3 compatibility
-
-
 class WrongLevel(AttributeError):
     pass
 
@@ -50,7 +44,7 @@ class Cursor(pymongo.cursor.Cursor):
         if isinstance(index, slice):
             # pymongo will return an iterator, so next will be called.
             return super(Cursor, self).__getitem__(index)
-        elif isinstance(index, (int, long)):
+        elif isinstance(index, int):
             # get a particular item by index
             document = super(Cursor, self).__getitem__(index)
             model_instance = self._model_class.inflate(document)
@@ -78,7 +72,6 @@ class Collection(pymongo.collection.Collection):
         if document:
             model_instance = self._model_class.inflate(document)
             return model_instance
-        return None
 
 
 class AttrDict(dict):
@@ -102,7 +95,7 @@ class AttrDict(dict):
             self[key] = other[key]
 
     def setdefault(self, key, value=None):
-        if key not in self:  # ... uh... python's default behavior is weird
+        if key not in self:
             self[key] = value
         return self[key]
 
@@ -123,10 +116,7 @@ class AttrDict(dict):
         for cls in self.__class__.__mro__ + (self,):
             if attr in cls.__dict__:
                 return object.__setattr__(self, attr, value)
-        try:
-            self[attr] = value
-        except KeyError as e:
-            raise AttributeError(e)  # it was accessed as an attribute!
+        self[attr] = value
 
     def __delattr__(self, key):
         """Delete items with dot notation"""
