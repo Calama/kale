@@ -14,6 +14,12 @@ import abc
 import pymongo
 
 
+try:
+    long
+except NameError:
+    long = int  # py3 compatibility
+
+
 class WrongLevel(AttributeError):
     pass
 
