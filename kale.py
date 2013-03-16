@@ -190,6 +190,10 @@ class Model(AttrDict):
         if '_id' in self:
             return self.collection.remove({'_id': self.pop('_id')})
 
+    def is_in_db(self):
+        """Does this instance have a record in the database?"""
+        return '_id' in self
+
     @classmethod
     def inflate(cls, json):
         """Return a model instance given its MongoDB json representation"""
