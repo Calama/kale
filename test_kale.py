@@ -289,6 +289,49 @@ class TestAttrDict(unittest.TestCase):
         with self.assertRaises(AttributeError):
             del ad.lalala
 
+    def test_nested(self):
+        init = {'a': {'b': 'c'}}
+        ad = kale.AttrDict(init)
+        self.assertEqual(ad.a.b, 'c')
+        ad.a.d = 'e'
+        self.assertEqual(ad['a']['d'], 'e')
+
+    def test_len(self):
+        init = {'a': 'b'}
+        ad = kale.AttrDict(init)
+        self.assertEqual(len(ad), 1)
+        ad.c = 'd'
+        self.assertEqual(len(ad), 2)
+        ad.clear()
+        self.assertEqual(len(ad), 0)
+
+    def test_copy(self):
+        init = {'a': 'b'}
+        ad = kale.AttrDict(init)
+        copy = ad.copy()
+        assert isinstance(copy, kale.AttrDict), 'the copy is not an AttrDict'
+        copy.a = 'c'
+        self.assertEqual(ad.a, 'b')
+        self.assertEqual(copy.a, 'c')
+
+    def test_clear(self):
+        init = {'a': 'b'}
+        ad = kale.AttrDict(init)
+        ad.clear()
+        self.assertFalse(ad)
+
+    def test_eqality(self):
+        init = {'a': 'b'}
+        ad = kale.AttrDict(init)
+        self.assertEqual(init, ad)
+
+    def test_keys_items(self):
+        init = {'a': 'b'}
+        ad = kale.AttrDict(init)
+        ad.c = 'd'
+        challenge = {'a': 'b', 'c': 'd'}
+        self.assertEqual(ad.items(), challenge.items())
+
 
 class TestModelCollection(unittest.TestCase):
 
