@@ -1,5 +1,6 @@
 kale
 ====
+[![Build Status](https://travis-ci.org/Calama/kale.png?branch=master)](https://travis-ci.org/Calama/kale)
 
 A convenient superclass and some helpers for stuff you want to keep in mongodb.
 
