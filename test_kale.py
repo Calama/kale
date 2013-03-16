@@ -1,4 +1,5 @@
 import unittest
+import warnings
 import pymongo
 from bson import ObjectId
 import kale
@@ -129,10 +130,12 @@ class TestModel(unittest.TestCase):
 
     def test_json_unsupported_types(self):
         json = {
-            'set': {1, 2, 3}
+            'set': set([1, 2, 3])
         }
         instance = self.EmptyModel(json)
-        self.assertRaises(pymongo.errors.InvalidDocument, instance.save)
+        with self.assertRaises(pymongo.errors.InvalidDocument):
+            with warnings.catch_warnings(record=True):
+                instance.save()
 
     def test_descriptor_setter(self):
         class DescModel(kale.Model):
