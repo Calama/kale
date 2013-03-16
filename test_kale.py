@@ -137,6 +137,41 @@ class TestModel(unittest.TestCase):
             with warnings.catch_warnings(record=True):
                 instance.save()
 
+    def test_descriptor_getter(self):
+        class DescModel(kale.Model):
+            _database = self.connection[self.database_name]
+            _collection_name = 'empty_models'
+
+            @property
+            def thing(self):
+                return self.lalala
+
+        d = DescModel()
+        with self.assertRaises(AttributeError) as e:
+            d.thing
+        try:
+            d.thing
+        except AttributeError as e:
+            self.assertNotEqual(e.message, 'AttributeError: thing')
+
+    def test_attributeerror_propagates(self):
+        class DescModel(kale.Model):
+            _database = self.connection[self.database_name]
+            _collection_name = 'empty_models'
+
+            @property
+            def thing(self):
+                return self.lalala
+
+        d = DescModel()
+        with self.assertRaises(AttributeError) as e:
+            d.thing
+        try:
+            d.thing
+        except AttributeError as e:
+            print e
+            assert 'lalala' in e.message, 'wrong attribute error'
+
     def test_descriptor_setter(self):
         class DescModel(kale.Model):
             _database = self.connection[self.database_name]
