@@ -16,7 +16,7 @@ readme = open('README.md').read()
 
 setup(
     name='kale',
-    version='0.1.3',
+    version='0.2',
     author='Philip Schleihauf',
     author_email='uniphil@gmail.com',
     url='https://github.com/Calama/kale',
