@@ -100,16 +100,15 @@ class AttrDict(dict):
             self[key] = value
         return self[key]
 
-    def __getattr__(self, attr):
-        """Access items with dot notation"""
+    def __getattribute__(self, attr):
+        """Access items with dot notation."""
         try:
-            return super(AttrDict, self).__getitem__(attr)
-        except KeyError as e:
-            the_attribute = getattr(type(self), attr)
-            if hasattr(the_attribute, '__get__'):
-                raise AttributeError('An AttributeError was raised inside the'
-                                     'descriptor "{}".'.format(attr))
-            raise AttributeError(e)  # it was accessed as an attribute!
+            return object.__getattribute__(self, attr)
+        except AttributeError as attr_error:
+            try:
+                return super(AttrDict, self).__getitem__(attr)
+            except KeyError:
+                raise attr_error
 
     def __setattr__(self, attr, value):
         """Set items with dot notation"""
