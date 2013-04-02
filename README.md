@@ -155,3 +155,4 @@ Changelog
 
  * Added live-instance registry that ensure only one instance of a document's
    model exists in the program.
+ * Added `collectionmethod` decorator.

@@ -370,5 +370,30 @@ class TestModelCollection(unittest.TestCase):
         SubSubModel.collection.drop()
 
 
+class TestCollectionMethod(unittest.TestCase):
+
+    def setUp(self):
+        self.connection = pymongo.MongoClient()
+        self.database_name = 'kale_testing_database'
+
+    def tearDown(self):
+        self.connection.drop_database(self.database_name)
+
+    def test_collection_method(self):
+
+        class MethodModel(kale.Model):
+            _database = self.connection[self.database_name]
+            _collection_name = 'empty_models'
+
+            @kale.collectionmethod
+            def sayhi(collection):
+                return 'hello'
+
+        self.assertEqual(MethodModel.sayhi(), 'hello')
+        m = MethodModel()
+        self.assertEqual(m.sayhi(), 'hello')
+
+
+
 if __name__ == '__main__':
     unittest.main()
