@@ -12,6 +12,7 @@
 
 import abc
 import weakref
+import functools
 import pymongo
 
 
@@ -73,6 +74,14 @@ class Collection(pymongo.collection.Collection):
         if document:
             model_instance = self._model_class.inflate(document)
             return model_instance
+
+
+def collectionmethod(fn):
+    @classmethod
+    @functools.wraps(fn)
+    def wrapper(model, *args, **kwargs):
+        return fn(model.collection, *args, **kwargs)
+    return wrapper
 
 
 class AttrDict(dict):
