@@ -5,6 +5,10 @@ kale
 A convenient superclass and some helpers for stuff you want to keep in mongodb.
 
 
+**Note**: The master branch should be considered unstable. Releases are tagged,
+so checkout a tag or use a release published on pypi for production.
+
+
 Motivation
 ----------
 
@@ -142,3 +146,12 @@ Notes
  * No special ref support... yet.
 
  * Feedback and tests welcome!
+
+
+Changelog
+---------
+
+### v0.3
+
+ * Added live-instance registry that ensure only one instance of a document's
+   model exists in the program.
