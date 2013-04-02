@@ -11,6 +11,7 @@
 
 
 import abc
+import weakref
 import pymongo
 
 
@@ -133,6 +134,8 @@ class AttrDict(dict):
 class Model(AttrDict):
     """Helper methods and properties."""
 
+    _live_documents = weakref.WeakValueDictionary()
+
     def __new__(cls, *args, **kwargs):
         """Return an instance of the class.
         ABCMeta isn't enforced because AttrDict screws around with __getattr__,
@@ -166,11 +169,15 @@ class Model(AttrDict):
         """Create or update the instance in the database. Returns the pymongo
         ObjectId. See :meth: pymongo.collection.Collection.save.
         """
-        return self.collection.save(self, *args, **kwargs)
+        _id = self.collection.save(self, *args, **kwargs)
+        self._live_documents[_id] = self
+        return _id
 
     def insert(self, *args, **kwargs):
         """Save as a new document in the database. Wraps collection.insert"""
-        return self.collection.insert(self, *args, **kwargs)
+        _id = self.collection.insert(self, *args, **kwargs)
+        self._live_documents[_id] = self
+        return _id
 
     def remove(self, spec=None, *args, **kwargs):
         """Remove this document from the databse."""
@@ -187,8 +194,11 @@ class Model(AttrDict):
     @classmethod
     def inflate(cls, json):
         """Return a model instance given its MongoDB json representation"""
-        instance = cls.__new__(cls)
-        Model.__init__(instance, json)
+        if '_id' in json and json['_id'] in cls._live_documents:
+            instance = cls._live_documents[json['_id']]
+        else:
+            instance = cls.__new__(cls)
+            Model.__init__(instance, json)
         return instance
 
     def __repr__(self):

@@ -269,6 +269,36 @@ class TestModel(unittest.TestCase):
         a.save()
         assert a.is_in_db() is True, 'the model should be re-saved...'
 
+    def test_multiple_instances(self):
+        a = self.EmptyModel()
+        a.save()
+        b = self.EmptyModel.collection.find_one()
+        assert b is a, 'multiple instances of a document exist'
+
+    def test_inserted_instances(self):
+        a = self.EmptyModel()
+        a.insert()
+        b = self.EmptyModel.collection.find_one()
+        self.assertIs(b, a, 'multiple instances of a document exist')
+
+    def test_remove_saved_identity(self):
+        a = self.EmptyModel()
+        a_id = a.save()
+        b = self.EmptyModel.collection.find_one()
+        a.remove()
+        self.assertFalse(b.is_in_db(), 'b should know it is not in the db')
+        a_id2 = a.save()
+        assert a_id2 != a_id, 'resaved document should have new id'
+        self.assertIs(b, a, 'documents lost track of each other')
+
+    def test_weakrefs_are_weak(self):
+        a = self.EmptyModel()
+        a.save()
+        del a
+        import gc
+        gc.collect()
+        self.assertFalse(self.EmptyModel._live_documents, 'document lived!')
+
 
 class TestAttrDict(unittest.TestCase):
 
