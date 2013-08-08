@@ -16,6 +16,13 @@ import functools
 import pymongo
 
 
+try:
+    basestring
+except NameError:
+    # must by python3
+    basestring = (str, bytes)
+
+
 class WrongLevel(AttributeError):
     pass
 
@@ -93,8 +100,14 @@ class AttrDict(dict):
         self.update(*args, **kwargs)
 
     def __setitem__(self, key, value):
-        if isinstance(value, dict) and not isinstance(value, AttrDict):
-            value = AttrDict(value)
+        if isinstance(value, dict):
+            if not isinstance(value, AttrDict):
+                value = AttrDict(value)
+        elif not isinstance(value, basestring):
+            try:
+                value = [AttrDict(v) for v in value]
+            except TypeError:
+                pass
         super(AttrDict, self).__setitem__(key, value)
 
     def update(self, *args, **kwargs):
