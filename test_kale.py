@@ -319,6 +319,21 @@ class TestAttrDict(unittest.TestCase):
         with self.assertRaises(AttributeError):
             del ad.lalala
 
+    def test_dict_cast(self):
+        d = {}
+        ad = kale.AttrDict(d)
+        self.assertIs(type(ad), kale.AttrDict)
+
+    def test_nested_dict_cast(self):
+        d = {'a': {}}
+        ad = kale.AttrDict(d)
+        self.assertIs(type(ad.a), kale.AttrDict)
+
+    def test_list_of_dicts_cast(self):
+        d = {'a': [{}]}
+        ad = kale.AttrDict(d)
+        self.assertIs(type(ad.a[0]), kale.AttrDict)
+
 
 class TestModelCollection(unittest.TestCase):
 
