@@ -147,6 +147,13 @@ Notes
 
  * Feedback and tests welcome!
 
+ * Kale does its best to cast dicts to `kale.AttrDict` recursively when you
+   instantiate a `kale.Model`, but it can't do magic -- If you do
+   `my_model_instance.listproperty.append({'some': 'dict'})`, it will be a
+   dict, not an `AttrDict`. However, if a document with this structure is
+   retrieved from the database, `dict`s in iterables _will_ be cast to
+   `AttrDict`s (as of v0.2.1).
+
 
 Changelog
 ---------
@@ -156,3 +163,7 @@ Changelog
  * Added live-instance registry that ensure only one instance of a document's
    model exists in the program.
  * Added `collectionmethod` decorator.
+
+### v0.2.1
+
+ * bugfix for casting dicts in iterables to AttrDict.
