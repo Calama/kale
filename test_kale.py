@@ -300,6 +300,76 @@ class TestModel(unittest.TestCase):
         self.assertFalse(self.EmptyModel._live_documents, 'document lived!')
 
 
+class TestDB(object):
+    """Get a database and make sure we clean up"""
+    def __init__(self, db_name='test_flask_kale'):
+        self.db_name = db_name
+
+    def __enter__(self):
+        self.cx = MongoClient()
+        self.db = self.cx[self.db_name]
+        return self.db
+
+    def __exit__(self, type, value, traceback):
+        self.cx.drop_database(self.db_name)
+
+
+class TestRelationships(unittest.TestCase):
+
+    class TwoDBModels(object):
+        def __enter__(self):
+            self.cx = pymongo.MongoClient()
+            self.db = self.cx['relationship_test']
+            class A(kale.Model):
+                _database = self.db
+                _collection_name = 'as'
+            class B(kale.Model):
+                _database = self.db
+                _collection_name = 'bs'
+            return A, B
+
+        def __exit__(self, *args, **kwargs):
+            self.cx.drop_database('relationship_test')
+
+    def test_one_to_one(self):
+        with self.TwoDBModels() as (A, B):
+            kale.acquaint(kale.One(A, 'a_ref'), kale.One(B, 'b_ref'))
+            a, b = A(), B()
+            a.b_ref = b
+            self.assertIs(b.a_ref, a)
+            a_id = a.save()
+            del a, b
+            a = A.collection.find_one(a_id)
+            assertIs(type(a.b_ref), B)
+
+    def test_one_to_many(self):
+        with self.TwoDBModels() as (A, B):
+            kale.acquaint(kale.One(A, 'a_ref'), kale.Many(B, 'b_refs'))
+            a, b1, b2 = A(), B(name='b1'), B(name='b2')
+            b1.a_ref = a
+            a.b_refs.append(b2)
+            self.assertIs(b1.a_ref, a)
+            self.assertIs(b2.a_ref, a)
+            self.assertEqual(a.b_refs, [b1, b2])
+            a_id = a.save()
+            del a, b1, b2
+            a = A.collection.find_one(a_id)
+            self.assertEqual(a.b_refs[0].name, 'b1')
+
+    def test_many_to_many(self):
+        with self.TwoDBModels() as (A, B):
+            kale.acquaint(kale.Many(A, 'a_refs'), kale.Many(B, 'b_refs'))
+            a1, a2, b1, b2 = A(n=1), A(n=2), B(n=1), B(n=2)
+            a1.b_refs = [b1, b2]
+            b1.a_refs.append(a2)
+            self.assertEqual(len(a1.b_refs), 2)
+            self.assertEqual(len(a2.b_refs), 1)
+            self.assertEqual(len(b1.a_refs), 2)
+            self.assertEqual(len(b2.a_refs), 1)
+
+    # TODO: test remove() methods and stuff in relationships
+
+
 class TestAttrDict(unittest.TestCase):
 
     def test_bad_multi_arg_update(self):
@@ -407,7 +477,6 @@ class TestCollectionMethod(unittest.TestCase):
         self.assertEqual(MethodModel.sayhi(), 'hello')
         m = MethodModel()
         self.assertEqual(m.sayhi(), 'hello')
-
 
 
 if __name__ == '__main__':
