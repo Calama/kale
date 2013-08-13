@@ -160,10 +160,14 @@ Changelog
 
 ### v0.3
 
- * Added live-instance registry that ensure only one instance of a document's
-   model exists in the program.
- * Added `collectionmethod` decorator.
+
 
 ### v0.2.1
 
  * bugfix for casting dicts in iterables to AttrDict.
+
+Intended for v0.3 but accidentally merged into v0.2.1:
+
+ * Added live-instance registry that ensure only one instance of a document's
+   model exists in the program.
+ * Added `collectionmethod` decorator.
