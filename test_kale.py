@@ -306,7 +306,7 @@ class TestDB(object):
         self.db_name = db_name
 
     def __enter__(self):
-        self.cx = MongoClient()
+        self.cx = pymongo.MongoClient()
         self.db = self.cx[self.db_name]
         return self.db
 
@@ -340,7 +340,7 @@ class TestRelationships(unittest.TestCase):
             a_id = a.save()
             del a, b
             a = A.collection.find_one(a_id)
-            assertIs(type(a.b_ref), B)
+            self.assertIs(type(a.b_ref), B)
 
     def test_one_to_many(self):
         with self.TwoDBModels() as (A, B):
