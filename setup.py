@@ -24,5 +24,5 @@ setup(
     description='Tiny PyMongo model layer',
     long_description=readme,
     install_requires=['pymongo'],
-    py_modules=['kale'],
+    packages=['kale'],
 )
