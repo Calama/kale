@@ -3,6 +3,7 @@ import warnings
 import pymongo
 from bson import ObjectId
 import kale
+from kale.model import AttrDict
 
 
 class TestModel(unittest.TestCase):
@@ -97,7 +98,7 @@ class TestModel(unittest.TestCase):
     def test_recursive_inflate(self):
         json = {'a': {}}
         instance = self.EmptyModel.inflate(json)
-        assert isinstance(instance.a, kale.AttrDict)
+        assert isinstance(instance.a, AttrDict)
 
     def test_json_native_types(self):
         from datetime import datetime
@@ -373,36 +374,36 @@ class TestRelationships(unittest.TestCase):
 class TestAttrDict(unittest.TestCase):
 
     def test_bad_multi_arg_update(self):
-        ad = kale.AttrDict()
+        ad = AttrDict()
         with self.assertRaises(TypeError):
             ad.update({}, {})
 
     def test_set_default(self):
-        ad = kale.AttrDict()
+        ad = AttrDict()
         ad.setdefault('a')
         self.assertEqual(ad['a'], None)
         ad.setdefault('b', 1)
         self.assertEqual(ad['b'], 1)
 
     def test_bad_delattr(self):
-        ad = kale.AttrDict()
+        ad = AttrDict()
         with self.assertRaises(AttributeError):
             del ad.lalala
 
     def test_dict_cast(self):
         d = {}
-        ad = kale.AttrDict(d)
-        self.assertIs(type(ad), kale.AttrDict)
+        ad = AttrDict(d)
+        self.assertIs(type(ad), AttrDict)
 
     def test_nested_dict_cast(self):
         d = {'a': {}}
-        ad = kale.AttrDict(d)
-        self.assertIs(type(ad.a), kale.AttrDict)
+        ad = AttrDict(d)
+        self.assertIs(type(ad.a), AttrDict)
 
     def test_list_of_dicts_cast(self):
         d = {'a': [{}]}
-        ad = kale.AttrDict(d)
-        self.assertIs(type(ad.a[0]), kale.AttrDict)
+        ad = AttrDict(d)
+        self.assertIs(type(ad.a[0]), AttrDict)
 
 
 class TestModelCollection(unittest.TestCase):
