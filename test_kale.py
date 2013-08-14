@@ -6,20 +6,144 @@ import kale
 from kale.model import AttrDict
 
 
-class TestModel(unittest.TestCase):
+class TestMongoBase(object):
 
-    def setUp(self):
-        self.connection = pymongo.MongoClient()
-        self.database_name = 'kale_testing_database'
-
+    @classmethod
+    def setUpClass(cls):
+        cls.db_name = 'kale_test_db'
+        cls.collection_name = 'kale_test_collection'
+        cls.cx = pymongo.MongoClient()
+        cls.db = cls.cx[cls.db_name]
         class EmptyModel(kale.Model):
-            _database = self.connection[self.database_name]
-            _collection_name = 'empty_models'
+            _database = cls.db
+            _collection_name = cls.collection_name
+        cls.EmptyModel = EmptyModel
 
-        self.EmptyModel = EmptyModel
+    @classmethod
+    def tearDownClass(cls):
+        cls.cx.drop_database(cls.db_name)
 
     def tearDown(self):
-        self.connection.drop_database(self.database_name)
+        self.db[self.collection_name].remove()
+
+
+class TestAttrDict(unittest.TestCase):
+
+    def test_bad_multi_arg_update(self):
+        ad = AttrDict()
+        with self.assertRaises(TypeError):
+            ad.update({}, {})
+
+    def test_set_default(self):
+        ad = AttrDict()
+        ad.setdefault('a')
+        self.assertEqual(ad['a'], None)
+        ad.setdefault('b', 1)
+        self.assertEqual(ad['b'], 1)
+
+    def test_bad_delattr(self):
+        ad = AttrDict()
+        with self.assertRaises(AttributeError):
+            del ad.lalala
+
+    def test_dict_cast(self):
+        d = {}
+        ad = AttrDict(d)
+        self.assertIs(type(ad), AttrDict)
+
+    def test_nested_dict_cast(self):
+        d = {'a': {}}
+        ad = AttrDict(d)
+        self.assertIs(type(ad.a), AttrDict)
+
+    def test_list_of_dicts_cast(self):
+        d = {'a': [{}]}
+        ad = AttrDict(d)
+        self.assertIs(type(ad.a[0]), AttrDict)
+
+    def test_descriptor_getter(self):
+        class DescObj(AttrDict):
+            @property
+            def thing(self):
+                return self.lalala
+
+        d = DescObj()
+        with self.assertRaises(AttributeError) as e:
+            d.thing
+        try:
+            d.thing
+        except AttributeError as e:
+            self.assertNotEqual(str(e), 'AttributeError: thing')
+
+    def test_attributeerror_propagates(self):
+        class DescObj(AttrDict):
+            @property
+            def thing(self):
+                return self.lalala
+
+        d = DescObj()
+        with self.assertRaises(AttributeError) as e:
+            d.thing
+        try:
+            d.thing
+        except AttributeError as e:
+            print(e)
+            assert 'lalala' in str(e), 'wrong attribute error'
+
+    def test_descriptor_setter(self):
+        class DescObj(AttrDict):
+            def blah():
+                def fget(self):
+                    return None
+
+                def fset(self, val):
+                    self.described = val
+
+                return locals()
+            blah = property(**blah())
+        d = DescObj()
+        d.blah = 'hello'
+        self.assertEqual(d.described, 'hello')
+
+    def test_descriptor_deleter(self):
+        class DescObj(AttrDict):
+            def blah():
+                def fget(self):
+                    pass
+
+                def fset(self, val):
+                    pass
+
+                def fdel(self):
+                    self.deleted = 'yeah'
+
+                return locals()
+            blah = property(**blah())
+        d = DescObj()
+        del d.blah
+        self.assertEqual(d.deleted, 'yeah')
+
+    def test_inherited_descriptior_setter(self):
+        class DescObj(AttrDict):
+            def blah():
+                def fget(self):
+                    return None
+
+                def fset(self, val):
+                    self.described = val
+
+                return locals()
+            blah = property(**blah())
+
+        class ExtendDescObj(DescObj):
+            pass
+
+        ed = ExtendDescObj()
+        ed.blah = 'hello'
+        self.assertEqual(ed.described, 'hello')
+
+
+class TestModel(TestMongoBase, unittest.TestCase):
 
     def test_base_model(self):
         self.assertRaises(TypeError, kale.Model)
@@ -34,7 +158,7 @@ class TestModel(unittest.TestCase):
         class NoName(kale.Model):
             pass
         self.assertRaises(TypeError, NoName)
-        self.assertEqual(self.EmptyModel.collection.name, 'empty_models')
+        self.assertEqual(self.EmptyModel.collection.name, self.collection_name)
 
     def test_repr_doesnt_break(self):
         e = self.EmptyModel()
@@ -55,7 +179,6 @@ class TestModel(unittest.TestCase):
     def test_saved(self):
         self.EmptyModel().save()
         count = self.EmptyModel.collection.count()
-        self.connection.fsync()
         self.assertEqual(count, 1)
 
     def test_insert(self):
@@ -70,14 +193,12 @@ class TestModel(unittest.TestCase):
     def test_inserted(self):
         self.EmptyModel().insert()
         count = self.EmptyModel.collection.count()
-        self.connection.fsync()
         self.assertEqual(count, 1)
 
     def test_remove(self):
         instance = self.EmptyModel()
         instance.save()
         instance.remove()
-        self.connection.fsync()
         self.assertEqual(self.EmptyModel.collection.count(), 0)
         assert '_id' not in instance
 
@@ -112,7 +233,6 @@ class TestModel(unittest.TestCase):
             'int': 1,
         }
         self.EmptyModel(json).save()
-        self.connection.fsync()
         json_out = self.EmptyModel.collection.find_one()
         assert isinstance(json_out.list, list)
         try:
@@ -130,7 +250,6 @@ class TestModel(unittest.TestCase):
             'tup': (1, 2, 3)
         }
         self.EmptyModel(json).save()
-        self.connection.fsync()
         json_out = self.EmptyModel.collection.find_one()
         assert isinstance(json_out.tup, list)
 
@@ -142,107 +261,6 @@ class TestModel(unittest.TestCase):
         with self.assertRaises(pymongo.errors.InvalidDocument):
             with warnings.catch_warnings(record=True):
                 instance.save()
-
-    def test_descriptor_getter(self):
-        """should be moved to attrdict tests"""
-        class DescModel(kale.Model):
-            _database = self.connection[self.database_name]
-            _collection_name = 'empty_models'
-
-            @property
-            def thing(self):
-                return self.lalala
-
-        d = DescModel()
-        with self.assertRaises(AttributeError) as e:
-            d.thing
-        try:
-            d.thing
-        except AttributeError as e:
-            self.assertNotEqual(str(e), 'AttributeError: thing')
-
-    def test_attributeerror_propagates(self):
-        """should be moved to attrdict tests"""
-        class DescModel(kale.Model):
-            _database = self.connection[self.database_name]
-            _collection_name = 'empty_models'
-
-            @property
-            def thing(self):
-                return self.lalala
-
-        d = DescModel()
-        with self.assertRaises(AttributeError) as e:
-            d.thing
-        try:
-            d.thing
-        except AttributeError as e:
-            print(e)
-            assert 'lalala' in str(e), 'wrong attribute error'
-
-    def test_descriptor_setter(self):
-        """should be moved to attrdict tests"""
-        class DescModel(kale.Model):
-            _database = self.connection[self.database_name]
-            _collection_name = 'empty_models'
-
-            def blah():
-                def fget(self):
-                    return None
-
-                def fset(self, val):
-                    self.described = val
-
-                return locals()
-            blah = property(**blah())
-        d = DescModel()
-        d.blah = 'hello'
-        self.assertEqual(d.described, 'hello')
-
-    def test_descriptor_deleter(self):
-        """should be moved to attrdict tests"""
-        class DescModel(kale.Model):
-            _database = self.connection[self.database_name]
-            _collection_name = 'empty_models'
-
-            def blah():
-                def fget(self):
-                    pass
-
-                def fset(self, val):
-                    pass
-
-                def fdel(self):
-                    self.deleted = 'yeah'
-
-                return locals()
-            blah = property(**blah())
-        d = DescModel()
-        del d.blah
-        self.assertEqual(d.deleted, 'yeah')
-
-    def test_inherited_descriptior_setter(self):
-        """should be move to AttrDict tests"""
-        class DescModel(kale.Model):
-            _database = self.connection[self.database_name]
-            _collection_name = 'empty_models'
-
-            def blah():
-                def fget(self):
-                    return None
-
-                def fset(self, val):
-                    self.described = val
-
-                return locals()
-            blah = property(**blah())
-
-        class ExtendDescModel(DescModel):
-            pass
-
-        ed = ExtendDescModel()
-        ed.blah = 'hello'
-        self.assertEqual(ed.described, 'hello')
 
     def test_setting_models(self):
         a = self.EmptyModel()
@@ -301,26 +319,61 @@ class TestModel(unittest.TestCase):
         self.assertFalse(self.EmptyModel._live_documents, 'document lived!')
 
 
-class TestDB(object):
-    """Get a database and make sure we clean up"""
-    def __init__(self, db_name='test_flask_kale'):
-        self.db_name = db_name
+class TestModelCollection(TestMongoBase, unittest.TestCase):
 
-    def __enter__(self):
-        self.cx = pymongo.MongoClient()
-        self.db = self.cx[self.db_name]
-        return self.db
+    def test_find_one_type(self):
+        self.EmptyModel().save()
+        out = self.EmptyModel.collection.find_one()
+        assert isinstance(out, self.EmptyModel)
 
-    def __exit__(self, type, value, traceback):
-        self.cx.drop_database(self.db_name)
+    def test_find_type(self):
+        self.EmptyModel().save()
+        out = self.EmptyModel.collection.find()[0]
+        assert isinstance(out, self.EmptyModel)
+
+    def test_cursor_slice(self):
+        for model in range(5):
+            self.EmptyModel().save()
+        self.EmptyModel.collection.find()[2:4]
+
+    def test_raw_collection(self):
+        self.EmptyModel().save()
+        out = self.EmptyModel.collection.raw().find_one()
+        assert isinstance(out, dict)
+        assert not isinstance(out, self.EmptyModel)
+
+    def test_sub_subclass_type(self):
+        class SubSubModel(self.EmptyModel):
+            _collection_name = 'test_subnode'
+        instance = SubSubModel()
+        inst_id = instance.save()
+        loaded = SubSubModel.collection.find_one(inst_id)
+        assert isinstance(loaded, SubSubModel),\
+                          'loaded instance is not a subnode'
+        SubSubModel.collection.drop()
 
 
-class TestRelationships(unittest.TestCase):
+class TestCollectionMethod(TestMongoBase, unittest.TestCase):
+
+    def test_collection_method(self):
+
+        class MethodModel(self.EmptyModel):
+            @kale.collectionmethod
+            def sayhi(collection):
+                return 'hello'
+
+        self.assertEqual(MethodModel.sayhi(), 'hello')
+        m = MethodModel()
+        self.assertEqual(m.sayhi(), 'hello')
+
+
+class TestRelationships(TestMongoBase, unittest.TestCase):
 
     class TwoDBModels(object):
+        def __init__(self, db):
+            self.db = db
+
         def __enter__(self):
-            self.cx = pymongo.MongoClient()
-            self.db = self.cx['relationship_test']
             class A(kale.Model):
                 _database = self.db
                 _collection_name = 'as'
@@ -330,10 +383,11 @@ class TestRelationships(unittest.TestCase):
             return A, B
 
         def __exit__(self, *args, **kwargs):
-            self.cx.drop_database('relationship_test')
+            self.db['as'].remove()
+            self.db['bs'].remove()
 
     def test_one_to_one(self):
-        with self.TwoDBModels() as (A, B):
+        with self.TwoDBModels(self.db) as (A, B):
             kale.acquaint(kale.One(A, 'a_ref'), kale.One(B, 'b_ref'))
             a, b = A(), B()
             a.b_ref = b
@@ -344,7 +398,7 @@ class TestRelationships(unittest.TestCase):
             self.assertIs(type(a.b_ref), B)
 
     def test_one_to_many(self):
-        with self.TwoDBModels() as (A, B):
+        with self.TwoDBModels(self.db) as (A, B):
             kale.acquaint(kale.One(A, 'a_ref'), kale.Many(B, 'b_refs'))
             a, b1, b2 = A(), B(name='b1'), B(name='b2')
             b1.a_ref = a
@@ -358,7 +412,7 @@ class TestRelationships(unittest.TestCase):
             self.assertEqual(a.b_refs[0].name, 'b1')
 
     def test_many_to_many(self):
-        with self.TwoDBModels() as (A, B):
+        with self.TwoDBModels(self.db) as (A, B):
             kale.acquaint(kale.Many(A, 'a_refs'), kale.Many(B, 'b_refs'))
             a1, a2, b1, b2 = A(n=1), A(n=2), B(n=1), B(n=2)
             a1.b_refs = [b1, b2]
@@ -369,115 +423,6 @@ class TestRelationships(unittest.TestCase):
             self.assertEqual(len(b2.a_refs), 1)
 
     # TODO: test remove() methods and stuff in relationships
-
-
-class TestAttrDict(unittest.TestCase):
-
-    def test_bad_multi_arg_update(self):
-        ad = AttrDict()
-        with self.assertRaises(TypeError):
-            ad.update({}, {})
-
-    def test_set_default(self):
-        ad = AttrDict()
-        ad.setdefault('a')
-        self.assertEqual(ad['a'], None)
-        ad.setdefault('b', 1)
-        self.assertEqual(ad['b'], 1)
-
-    def test_bad_delattr(self):
-        ad = AttrDict()
-        with self.assertRaises(AttributeError):
-            del ad.lalala
-
-    def test_dict_cast(self):
-        d = {}
-        ad = AttrDict(d)
-        self.assertIs(type(ad), AttrDict)
-
-    def test_nested_dict_cast(self):
-        d = {'a': {}}
-        ad = AttrDict(d)
-        self.assertIs(type(ad.a), AttrDict)
-
-    def test_list_of_dicts_cast(self):
-        d = {'a': [{}]}
-        ad = AttrDict(d)
-        self.assertIs(type(ad.a[0]), AttrDict)
-
-
-class TestModelCollection(unittest.TestCase):
-
-    def setUp(self):
-        self.connection = pymongo.MongoClient()
-        self.database_name = 'kale_testing_database'
-
-        class EmptyModel(kale.Model):
-            _database = self.connection[self.database_name]
-            _collection_name = 'empty_models'
-
-        self.EmptyModel = EmptyModel
-
-    def tearDown(self):
-        self.connection.drop_database(self.database_name)
-
-    def test_find_one_type(self):
-        self.EmptyModel().save()
-        self.connection.fsync()
-        out = self.EmptyModel.collection.find_one()
-        assert isinstance(out, self.EmptyModel)
-
-    def test_find_type(self):
-        self.EmptyModel().save()
-        self.connection.fsync()
-        out = self.EmptyModel.collection.find()[0]
-        assert isinstance(out, self.EmptyModel)
-
-    def test_cursor_slice(self):
-        for model in range(5):
-            self.EmptyModel().save()
-        self.connection.fsync()
-        self.EmptyModel.collection.find()[2:4]
-
-    def test_raw_collection(self):
-        self.EmptyModel().save()
-        self.connection.fsync()
-        out = self.EmptyModel.collection.raw().find_one()
-        assert isinstance(out, dict)
-        assert not isinstance(out, self.EmptyModel)
-
-    def test_sub_subclass_type(self):
-        class SubSubModel(self.EmptyModel):
-            _collection_name = 'test_subnode'
-        _id = SubSubModel().save()
-        loaded = SubSubModel.collection.find_one(_id)
-        assert isinstance(loaded, SubSubModel),\
-            'loaded subnode is not a subnode'
-        SubSubModel.collection.drop()
-
-
-class TestCollectionMethod(unittest.TestCase):
-
-    def setUp(self):
-        self.connection = pymongo.MongoClient()
-        self.database_name = 'kale_testing_database'
-
-    def tearDown(self):
-        self.connection.drop_database(self.database_name)
-
-    def test_collection_method(self):
-
-        class MethodModel(kale.Model):
-            _database = self.connection[self.database_name]
-            _collection_name = 'empty_models'
-
-            @kale.collectionmethod
-            def sayhi(collection):
-                return 'hello'
-
-        self.assertEqual(MethodModel.sayhi(), 'hello')
-        m = MethodModel()
-        self.assertEqual(m.sayhi(), 'hello')
 
 
 if __name__ == '__main__':
