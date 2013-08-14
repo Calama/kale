@@ -9,6 +9,6 @@
     :license: :) see http://license.visualidiot.com/
 """
 
-from model import (Model,
-                   collectionmethod,
-                   WrongLevel)
+from .model import (Model,
+                    collectionmethod,
+                    WrongLevel)
