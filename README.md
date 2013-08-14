@@ -163,6 +163,7 @@ Changelog
  * Added live-instance registry that ensure only one instance of a document's
    model exists in the program.
  * Added `collectionmethod` decorator.
+ * Remove model-level `insert` method -- this is a collection-level operation.
 
 ### v0.2.1
 

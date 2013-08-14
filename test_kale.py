@@ -57,21 +57,6 @@ class TestModel(unittest.TestCase):
         self.connection.fsync()
         self.assertEqual(count, 1)
 
-    def test_insert(self):
-        instance = self.EmptyModel()
-        instance.insert()
-        assert '_id' in instance
-        self.assertRaises(pymongo.errors.DuplicateKeyError, instance.insert)
-        instance2 = self.EmptyModel()
-        instance2.insert()
-        assert instance._id != instance2._id
-
-    def test_inserted(self):
-        self.EmptyModel().insert()
-        count = self.EmptyModel.collection.count()
-        self.connection.fsync()
-        self.assertEqual(count, 1)
-
     def test_remove(self):
         instance = self.EmptyModel()
         instance.save()
@@ -274,12 +259,6 @@ class TestModel(unittest.TestCase):
         a.save()
         b = self.EmptyModel.collection.find_one()
         assert b is a, 'multiple instances of a document exist'
-
-    def test_inserted_instances(self):
-        a = self.EmptyModel()
-        a.insert()
-        b = self.EmptyModel.collection.find_one()
-        self.assertIs(b, a, 'multiple instances of a document exist')
 
     def test_remove_saved_identity(self):
         a = self.EmptyModel()
