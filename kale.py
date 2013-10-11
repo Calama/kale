@@ -113,6 +113,9 @@ class AttrDict(dict):
     @classmethod
     def _try_attrdict(cls, thing):
         """cast a thing to attrdict if possible"""
+        if not thing and not isinstance(thing, dict):
+            """don't cast empty non-dict iterables"""
+            return thing
         try:
             return cls(thing)
         except ValueError:
