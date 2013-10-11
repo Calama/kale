@@ -338,6 +338,11 @@ class TestAttrDict(unittest.TestCase):
         d = {'a': ['b']}
         kale.AttrDict(d)
 
+    def test_intererable_containing_empty_iterable_regression(self):
+        d = {'a': [[]]}
+        ad = kale.AttrDict(d)
+        self.assertIs(type(ad.a[0]), list)
+
     def test_mixed_list(self):
         d = {'a': ['b', {}]}
         ad = kale.AttrDict(d)
