@@ -165,6 +165,9 @@ Changelog
  * Added `collectionmethod` decorator.
 
 
+### v0.2.3
+ * fix some more casting stuff
+
 ### v0.2.2
  * fix some casting stuff
 
