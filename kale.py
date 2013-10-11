@@ -105,10 +105,18 @@ class AttrDict(dict):
                 value = AttrDict(value)
         elif not isinstance(value, basestring):
             try:
-                value = [AttrDict(v) for v in value]
+                value = [AttrDict._try_attrdict(v) for v in value]
             except TypeError:
-                pass
+                """ignore iterables"""
         super(AttrDict, self).__setitem__(key, value)
+
+    @classmethod
+    def _try_attrdict(cls, thing):
+        """cast a thing to attrdict if possible"""
+        try:
+            return cls(thing)
+        except ValueError:
+            return thing
 
     def update(self, *args, **kwargs):
         if len(args) > 1:

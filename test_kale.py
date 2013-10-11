@@ -334,6 +334,15 @@ class TestAttrDict(unittest.TestCase):
         ad = kale.AttrDict(d)
         self.assertIs(type(ad.a[0]), kale.AttrDict)
 
+    def test_interable_of_strings_regression(self):
+        d = {'a': ['b']}
+        kale.AttrDict(d)
+
+    def test_mixed_list(self):
+        d = {'a': ['b', {}]}
+        ad = kale.AttrDict(d)
+        self.assertIs(type(ad['a'][1]), kale.AttrDict)
+
 
 class TestModelCollection(unittest.TestCase):
 
