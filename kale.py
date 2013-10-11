@@ -106,7 +106,7 @@ class AttrDict(dict):
         elif not isinstance(value, basestring):
             try:
                 value = [AttrDict(v) for v in value]
-            except TypeError:
+            except (ValueError, TypeError):
                 pass
         super(AttrDict, self).__setitem__(key, value)
 
