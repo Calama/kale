@@ -164,6 +164,10 @@ Changelog
    model exists in the program.
  * Added `collectionmethod` decorator.
 
+
+### v0.2.2
+ * fix some casting stuff
+
 ### v0.2.1
 
  * bugfix for casting dicts in iterables to AttrDict.
