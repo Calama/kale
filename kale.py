@@ -210,7 +210,7 @@ class Model(AttrDict):
         """Save as a new document in the database. Wraps collection.insert"""
         _id = self.collection.insert(self, *args, **kwargs)
         self._live_documents[_id] = self
-        return _idup
+        return _id
 
     def remove(self, spec=None, *args, **kwargs):
         """Remove this document from the databse."""
