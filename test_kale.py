@@ -299,6 +299,24 @@ class TestModel(unittest.TestCase):
         gc.collect()
         self.assertFalse(self.EmptyModel._live_documents, 'document lived!')
 
+    def test_cached_db_regression(self):
+        db1 = self.connection[self.database_name]
+        db2 = self.connection[self.database_name + '2']
+        try:
+            class MyModel(kale.Model):
+                _database = db1
+                _collection_name = 'lalala'
+
+            db = MyModel.collection.database
+            self.assertIs(db, db1)
+
+            MyModel._database = db2
+            self.assertIs(db, db2)
+
+        finally:
+            self.connection.drop_database(self.database_name + '2')
+
+
 
 class TestAttrDict(unittest.TestCase):
 
