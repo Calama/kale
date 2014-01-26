@@ -311,6 +311,7 @@ class TestModel(unittest.TestCase):
             self.assertIs(db, db1)
 
             MyModel._database = db2
+            db = MyModel.collection.database
             self.assertIs(db, db2)
 
         finally:
