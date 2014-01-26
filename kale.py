@@ -193,10 +193,7 @@ class Model(AttrDict):
     @classmethod
     def collection(cls):
         """Return the pymongo collection storing instances of the model."""
-        if not hasattr(cls, '_collection'):
-            cls._collection = Collection(cls, cls._database,
-                                         cls._collection_name)
-        return cls._collection
+        return Collection(cls, cls._database, cls._collection_name)
 
     def save(self, *args, **kwargs):
         """Create or update the instance in the database. Returns the pymongo
